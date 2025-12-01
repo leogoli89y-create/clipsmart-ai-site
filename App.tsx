@@ -8,7 +8,7 @@ import { AppScreen, Clip, ClipStyle, VideoMetadata, AspectRatio, CaptionStyle, T
 // Icons
 const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 mb-4 text-zinc-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>;
 const ScissorsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm8.486-8.486a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243z" /></svg>;
-const MagicIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>;
+const MagicIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
 const PlayIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 ml-1" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-1.815a1 1 0 000-1.74l-3-1.815z" clipRule="evenodd" /></svg>;
 const PauseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>;
@@ -28,6 +28,7 @@ const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-
 const TranslateIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>;
 const DocumentTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
 const VideoCameraIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>;
+const DownloadListIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>;
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.UPLOAD);
@@ -296,13 +297,44 @@ const App: React.FC = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     } else {
-        alert("Simulação de download concluída! Em um ambiente de produção, o arquivo MP4 renderizado seria baixado aqui.");
+        alert("Download simulado! O vídeo processado (cortado e com legendas) seria baixado agora em um ambiente real de produção.");
     }
 
     setTimeout(() => {
         setIsRendering(false);
         setRenderingProgress(0);
     }, 1000);
+  };
+
+  const handleDownloadAll = () => {
+     // Create a text summary for the user
+     let content = `RELATÓRIO DE CLIPES - CLIPSMART AI\n\n`;
+     content += `Vídeo Original: ${videoMeta?.type === 'youtube' ? videoMeta.url : videoMeta?.file?.name || 'Upload'}\n`;
+     content += `Data: ${new Date().toLocaleString()}\n\n`;
+     content += `================================================\n\n`;
+
+     clips.forEach((clip, index) => {
+         content += `CLIPE #${index + 1}: ${clip.title}\n`;
+         content += `Tempo: ${formatTime(clip.startTime)} - ${formatTime(clip.endTime)}\n`;
+         content += `Viral Score: ${clip.viralityScore}/10\n`;
+         content += `Legenda Viral: ${clip.viralCaption}\n`;
+         content += `Transcrição: ${clip.transcript}\n`;
+         content += `------------------------------------------------\n\n`;
+         
+         // Trigger individual SRT download
+         setTimeout(() => handleDownloadSRT(clip), index * 500);
+     });
+
+     const blob = new Blob([content], { type: 'text/plain' });
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement('a');
+     a.href = url;
+     a.download = `clipsmart_resumo.txt`;
+     document.body.appendChild(a);
+     a.click();
+     document.body.removeChild(a);
+     
+     alert("Download iniciado! Baixando resumo (.txt) e legendas (.srt) individuais. Para vídeos, utilize o botão 'Vídeo' em cada cartão.");
   };
 
   // Drag and Drop Handlers
@@ -483,9 +515,17 @@ const App: React.FC = () => {
             <h2 className="text-3xl font-bold text-white mb-2">Clipes Gerados</h2>
             <p className="text-zinc-400">Arraste para reordenar ou clique para pré-visualizar.</p>
          </div>
-         <button onClick={() => setScreen(AppScreen.UPLOAD)} className="text-sm text-zinc-500 hover:text-white underline">
-            Novo Vídeo
-         </button>
+         <div className="flex gap-3">
+             <button 
+                onClick={handleDownloadAll}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
+             >
+                <DownloadListIcon /> Baixar Tudo
+             </button>
+             <button onClick={() => setScreen(AppScreen.UPLOAD)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg border border-zinc-700 transition-colors">
+                Novo Vídeo
+             </button>
+         </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -559,37 +599,40 @@ const App: React.FC = () => {
                  </div>
 
                  {/* Actions Stack */}
-                 <div className="flex md:flex-col gap-2 items-stretch justify-center md:w-32 shrink-0">
-                    <div className="relative group/download">
+                 <div className="flex flex-col gap-2 items-stretch justify-center md:w-36 shrink-0">
+                    <div className="flex gap-2">
                         <button 
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-zinc-900 text-sm font-bold rounded-lg transition-colors shadow-sm"
+                            onClick={() => handleDownloadVideo(clip)}
+                            className="flex-1 flex items-center justify-center gap-2 px-2 py-2 bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-bold rounded-lg transition-colors shadow-sm"
+                            title="Baixar Vídeo MP4"
                         >
-                            <DownloadIcon /> Baixar
+                            <DownloadIcon /> Vídeo
                         </button>
-                        {/* Download Dropdown */}
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden z-20 opacity-0 invisible group-hover/download:opacity-100 group-hover/download:visible transition-all">
-                            <button onClick={() => handleDownloadVideo(clip)} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
-                                <VideoCameraIcon /> Vídeo (MP4)
-                            </button>
-                            <button onClick={() => handleDownloadSRT(clip)} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
-                                <DocumentTextIcon /> Legenda (.SRT)
-                            </button>
-                        </div>
+                        <button 
+                            onClick={() => handleDownloadSRT(clip)}
+                            className="w-10 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg border border-zinc-700 transition-colors"
+                            title="Baixar Legenda (.srt)"
+                        >
+                            <DocumentTextIcon />
+                        </button>
                     </div>
+
                     <button 
                         onClick={() => handleEditClip(clip)}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-white rounded-lg transition-colors border border-zinc-700"
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-white rounded-lg transition-colors border border-zinc-700"
                     >
                         <ScissorsIcon /> Editar
                     </button>
+
                     <button 
                          onClick={() => handleSmartCut(clip)}
                          disabled={isRefining}
-                         className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 text-sm font-medium rounded-lg transition-colors border border-indigo-500/20"
+                         className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 text-xs font-medium rounded-lg transition-colors border border-indigo-500/20"
                     >
-                         {isRefining ? <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/> : <MagicIcon />}
+                         {isRefining ? <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/> : <MagicIcon />}
                          {isRefining ? 'Refinando' : 'Smart Cut'}
                     </button>
+                    
                     <div className="flex gap-2">
                          <button 
                             onClick={() => regenerateClip(clip)}
