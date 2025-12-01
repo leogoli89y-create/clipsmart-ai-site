@@ -25,9 +25,6 @@ const ZoomOutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>;
 const CropIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>;
 const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 9a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l3.293 3.293a1 1 0 01-1.414 1.414L13 3.414 11.414 5l-1.414-1.414L12 1.586A1 1 0 0112.707 1zM14 10a1 1 0 100-2 1 1 0 000 2zM8.707 15.293a1 1 0 010 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6 16.586l1.293-1.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>;
-const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>;
-const WindowsIcon = () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>;
-const AndroidIcon = () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.152-.5676.416.416 0 00-.5676.152l-2.0223 3.503C15.5902 8.3785 13.8532 8 12 8s-3.5902.3785-5.1367.9497L4.8409 5.4465a.4161.4161 0 00-.5676-.152.416.416 0 00-.152.5676l1.9973 3.4592C2.6889 11.1867.3432 15.2936.3432 20.0003h23.3136c0-4.7067-2.3457-8.8136-5.7887-10.6789"/></svg>;
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.UPLOAD);
@@ -39,7 +36,6 @@ const App: React.FC = () => {
   const [processingStatus, setProcessingStatus] = useState("Iniciando...");
   const [currentStyle, setCurrentStyle] = useState<ClipStyle>(ClipStyle.DYNAMIC);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
-  const [showDownloadModal, setShowDownloadModal] = useState(false);
   
   // YouTube State
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -273,69 +269,7 @@ const App: React.FC = () => {
         <Logo className="w-10 h-10" />
         <span className="text-xl font-bold tracking-tight text-white hidden md:block">ClipSmart AI</span>
       </div>
-      <button 
-        onClick={() => setShowDownloadModal(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-full font-medium text-sm transition-all shadow-lg hover:shadow-indigo-500/20"
-      >
-        <DownloadIcon />
-        Baixar App
-      </button>
     </header>
-  );
-
-  const DownloadAppModal = () => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl">
-            <button 
-                onClick={() => setShowDownloadModal(false)} 
-                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
-            >
-                <XIcon />
-            </button>
-            
-            <div className="text-center mb-8">
-                <div className="inline-flex p-3 rounded-2xl bg-indigo-500/10 mb-4">
-                    <Logo className="w-12 h-12" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Instale o ClipSmart AI</h3>
-                <p className="text-zinc-400">Tenha o poder da IA diretamente no seu desktop ou celular.</p>
-            </div>
-            
-            <div className="space-y-4">
-                <button 
-                    onClick={() => { alert('Download da versão Windows iniciado (Simulação)'); setShowDownloadModal(false); }}
-                    className="w-full flex items-center justify-between p-4 bg-zinc-800 hover:bg-zinc-750 hover:border-indigo-500/50 border border-zinc-700 rounded-2xl transition-all group"
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-[#0078D4]/10 text-[#0078D4] rounded-xl group-hover:bg-[#0078D4] group-hover:text-white transition-colors">
-                            <WindowsIcon />
-                        </div>
-                        <div className="text-left">
-                            <div className="font-semibold text-white">Windows</div>
-                            <div className="text-xs text-zinc-500">Versão 1.2.0 (x64)</div>
-                        </div>
-                    </div>
-                    <span className="text-zinc-500 group-hover:text-white transition-colors text-sm">Baixar .exe</span>
-                </button>
-
-                <button 
-                    onClick={() => { alert('Download da versão Android iniciado (Simulação)'); setShowDownloadModal(false); }}
-                    className="w-full flex items-center justify-between p-4 bg-zinc-800 hover:bg-zinc-750 hover:border-green-500/50 border border-zinc-700 rounded-2xl transition-all group"
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-[#3DDC84]/10 text-[#3DDC84] rounded-xl group-hover:bg-[#3DDC84] group-hover:text-white transition-colors">
-                            <AndroidIcon />
-                        </div>
-                        <div className="text-left">
-                            <div className="font-semibold text-white">Android</div>
-                            <div className="text-xs text-zinc-500">APK Universal</div>
-                        </div>
-                    </div>
-                    <span className="text-zinc-500 group-hover:text-white transition-colors text-sm">Baixar .apk</span>
-                </button>
-            </div>
-        </div>
-    </div>
   );
 
   // --- Screens ---
@@ -974,7 +908,6 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {previewClip && renderPreviewModal()}
-      {showDownloadModal && <DownloadAppModal />}
       
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { height: 6px; }
