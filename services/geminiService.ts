@@ -113,30 +113,30 @@ export const analyzeVideoForClips = async (
     }
 
     const prompt = `
-      Atue como um Especialista em Edição de Vídeo com IA e Engenharia de Áudio Avançada.
+      Atue como um Engenheiro de Áudio Sênior e Especialista em Conteúdo Viral.
       
-      Sua tarefa é analisar o vídeo e gerar clipes virais.
-      
-      DIRETRIZES DE ÁUDIO E LEGENDA (CRÍTICO):
-      1. Transcrição de Alta Fidelidade: Realize uma transcrição Speech-to-Text precisa.
-      2. Correção de Ruído/Sotaque: Ignore ruídos de fundo. Se houver sotaques fortes ou fala rápida, transcreva a INTENÇÃO correta das palavras, corrigindo leves erros gramaticais para que a legenda seja legível e profissional.
-      3. Limpeza: Remova vícios de linguagem como "hmmm", "é...", "tipo assim", deixando o texto direto.
-      4. Sincronização: Certifique-se de que o texto transcrito pertence EXATAMENTE ao intervalo de tempo (startTime/endTime) selecionado.
-      
+      Sua tarefa é analisar o vídeo (visual e áudio) para extrair clipes de altíssima qualidade.
+
+      DIRETRIZES RIGOROSAS DE ÁUDIO E TRANSCRIÇÃO:
+      1. **Isolamento Vocal**: O vídeo pode ter ruído de fundo, música ou interferências. Sua prioridade é isolar a voz principal. Utilize o contexto visual (leitura labial) para desambiguar palavras se o áudio estiver confuso.
+      2. **Correção de Dicção e Sotaque**: Se houver sotaques fortes, fala muito rápida ou gírias, transcreva o texto em português padrão claro, mantendo a intenção original. O objetivo é legibilidade total.
+      3. **Sincronia Exata**: O 'transcript' deve conter APENAS o que é dito entre 'startTime' e 'endTime'. Não inclua palavras cortadas no início ou no fim.
+      4. **Limpeza Editorial**: Remova hesitações ("é...", "hum", "tipo assim") e repetições gaguejadas. A legenda deve ser limpa, profissional e direta.
+
       ${styleInstruction}
       
-      Sua missão: Encontrar 3 a 4 trechos com potencial EXTREMO de viralização.
+      Sua missão: Identificar 3 a 4 trechos (Golden Moments) com potencial viral.
       Critérios de corte:
       - Gancho (Hook) forte nos primeiros 3 segundos.
       - Conteúdo que gera retenção.
       
       Para cada clipe, gere JSON com:
-      - title: Título curto e apelativo (clickbait saudável).
+      - title: Título curto e apelativo.
       - summary: Descrição técnica do que acontece.
       - viralCaption: Uma legenda pronta para postar, usando gatilhos mentais, emojis e 3 hashtags relevantes.
-      - startTime / endTime: Segundos exatos.
+      - startTime / endTime: Segundos exatos (float).
       - viralityScore: Nota 1-10 baseada no potencial de engajamento.
-      - transcript: Transcrição limpa e corrigida da fala neste trecho exato.
+      - transcript: Transcrição limpa, corrigida e perfeitamente sincronizada.
     `;
 
     const response = await ai.models.generateContent({

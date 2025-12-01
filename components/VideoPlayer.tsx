@@ -10,7 +10,10 @@ interface VideoPlayerProps {
   aspectRatio: AspectRatio;
   captionText?: string;
   showCaptions?: boolean;
-  captionStyle?: CaptionStyle; // New prop for styling
+  captionStyle?: CaptionStyle;
+  captionTextColor?: string;
+  captionBgColor?: string;
+  captionFontSize?: number;
   cropPosition?: { x: number, y: number }; // For manual panning
   onTimeUpdate?: (currentTime: number) => void;
   onEnded?: () => void;
@@ -27,6 +30,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   captionText,
   showCaptions = true,
   captionStyle = CaptionStyle.MODERN,
+  captionTextColor = '#FFFFFF',
+  captionBgColor = 'rgba(0,0,0,0.6)',
+  captionFontSize = 18,
   cropPosition = { x: 50, y: 50 },
   onTimeUpdate,
   onEnded,
@@ -61,6 +67,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, [isPlaying, startTime, isYoutube]);
 
   useEffect(() => {
+      // Logic to seek when start time changes (scrubbing)
+      if (videoRef.current && !isYoutube && !isPlaying) {
+          if (Math.abs(videoRef.current.currentTime - startTime) > 0.1) {
+              videoRef.current.currentTime = startTime;
+          }
+      }
+  }, [startTime, isYoutube, isPlaying]);
+
+  useEffect(() => {
     if(videoRef.current && !isYoutube) {
         videoRef.current.muted = muted;
     }
@@ -87,18 +102,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   // Caption Styling Logic
-  const getCaptionStyles = () => {
-    const base = "inline-block px-3 py-1 text-lg md:text-xl font-bold transition-all duration-300 ";
+  // We separate structural classes (Tailwind) from customizable styles (Inline)
+  const getCaptionBaseClasses = () => {
+    const base = "inline-block px-3 py-1 transition-all duration-300 text-center ";
     switch (captionStyle) {
         case CaptionStyle.CLASSIC:
-            return base + "text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]";
+            return base + "drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] font-bold";
         case CaptionStyle.HIGHLIGHT:
-            return base + "text-yellow-400 font-extrabold uppercase drop-shadow-[0_2px_0_rgba(0,0,0,1)] tracking-wide";
+            return base + "font-extrabold uppercase drop-shadow-[0_2px_0_rgba(0,0,0,1)] tracking-wide";
         case CaptionStyle.BOX:
-            return base + "bg-indigo-600 text-white rounded-sm uppercase";
+            return base + "rounded-sm uppercase font-bold";
         case CaptionStyle.MODERN:
         default:
-            return base + "bg-black/60 backdrop-blur-sm text-white rounded-lg border border-white/10 shadow-lg";
+            return base + "backdrop-blur-sm rounded-lg border border-white/10 shadow-lg font-bold";
     }
   };
 
@@ -166,7 +182,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Captions Overlay */}
       {showCaptions && captionText && (
         <div className="absolute bottom-16 left-4 right-4 text-center pointer-events-none z-10 flex flex-col items-center justify-end min-h-[100px]">
-          <span className={getCaptionStyles()}>
+          <span 
+            className={getCaptionBaseClasses()}
+            style={{
+                color: captionTextColor,
+                backgroundColor: captionBgColor,
+                fontSize: `${captionFontSize}px`,
+                lineHeight: '1.4'
+            }}
+          >
             {captionText}
           </span>
         </div>

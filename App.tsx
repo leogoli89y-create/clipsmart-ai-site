@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VideoPlayer } from './components/VideoPlayer';
 import { Logo } from './components/Logo';
-import { analyzeVideoForClips } from './services/geminiService';
+import { analyzeVideoForClips, refineClip } from './services/geminiService';
 import { formatTime } from './utils/videoUtils';
 import { AppScreen, Clip, ClipStyle, VideoMetadata, AspectRatio, CaptionStyle } from './types';
 
@@ -17,15 +17,17 @@ const LinkIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>;
-const DragHandleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-zinc-400 cursor-grab active:cursor-grabbing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>;
+const DragHandleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>;
 const MinusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
 const ZoomInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>;
 const ZoomOutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>;
-const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>;
 const CropIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>;
 const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 9a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l3.293 3.293a1 1 0 01-1.414 1.414L13 3.414 11.414 5l-1.414-1.414L12 1.586A1 1 0 0112.707 1zM14 10a1 1 0 100-2 1 1 0 000 2zM8.707 15.293a1 1 0 010 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6 16.586l1.293-1.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>;
+const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>;
+const WindowsIcon = () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>;
+const AndroidIcon = () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.152-.5676.416.416 0 00-.5676.152l-2.0223 3.503C15.5902 8.3785 13.8532 8 12 8s-3.5902.3785-5.1367.9497L4.8409 5.4465a.4161.4161 0 00-.5676-.152.416.416 0 00-.152.5676l1.9973 3.4592C2.6889 11.1867.3432 15.2936.3432 20.0003h23.3136c0-4.7067-2.3457-8.8136-5.7887-10.6789"/></svg>;
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.UPLOAD);
@@ -37,6 +39,7 @@ const App: React.FC = () => {
   const [processingStatus, setProcessingStatus] = useState("Iniciando...");
   const [currentStyle, setCurrentStyle] = useState<ClipStyle>(ClipStyle.DYNAMIC);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   
   // YouTube State
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -53,6 +56,12 @@ const App: React.FC = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [cropPosition, setCropPosition] = useState({ x: 50, y: 50 });
   const [isDetectingSubject, setIsDetectingSubject] = useState(false);
+  const [savingStatus, setSavingStatus] = useState("");
+
+  // Caption Customization State
+  const [captionTextColor, setCaptionTextColor] = useState("#FFFFFF");
+  const [captionBgColor, setCaptionBgColor] = useState("rgba(0,0,0,0.6)");
+  const [captionFontSize, setCaptionFontSize] = useState(20);
 
   // Drag and Drop State
   const [draggedClipIndex, setDraggedClipIndex] = useState<number | null>(null);
@@ -170,17 +179,8 @@ const App: React.FC = () => {
 
   const handleSmartCut = async (clip: Clip) => {
     setRefiningClipId(clip.id);
-    await new Promise(r => setTimeout(r, 1500));
-    const duration = clip.endTime - clip.startTime;
-    const newStart = Math.max(0, clip.startTime - 2.5); 
-    const newEnd = newStart + duration;
-    const refinedClip = {
-        ...clip,
-        startTime: newStart,
-        endTime: newEnd,
-        title: clip.title + " (Refinado)"
-    };
-    setClips(clips.map(c => c.id === clip.id ? refinedClip : c));
+    const updatedClip = await refineClip(clip);
+    setClips(clips.map(c => c.id === clip.id ? updatedClip : c));
     setRefiningClipId(null);
   };
 
@@ -212,13 +212,20 @@ const App: React.FC = () => {
     setScreen(AppScreen.EDITOR);
     setIsPlaying(true);
     setPreviewClip(null);
+    
+    // Reset style defaults when entering editor
+    setCaptionTextColor("#FFFFFF");
+    setCaptionBgColor("rgba(0,0,0,0.6)");
+    setCaptionFontSize(20);
   };
 
   // Centralized function to update edited clip and auto-save to global state
   const saveClipChange = (updatedClip: Clip) => {
     setEditedClip(updatedClip);
+    setSavingStatus("Salvando...");
     // Auto-save: Update the global clips array immediately
     setClips(prevClips => prevClips.map(c => c.id === updatedClip.id ? updatedClip : c));
+    setTimeout(() => setSavingStatus("Salvo"), 800);
   };
 
   const adjustTime = (type: 'start' | 'end', amount: number) => {
@@ -266,7 +273,69 @@ const App: React.FC = () => {
         <Logo className="w-10 h-10" />
         <span className="text-xl font-bold tracking-tight text-white hidden md:block">ClipSmart AI</span>
       </div>
+      <button 
+        onClick={() => setShowDownloadModal(true)}
+        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-full font-medium text-sm transition-all shadow-lg hover:shadow-indigo-500/20"
+      >
+        <DownloadIcon />
+        Baixar App
+      </button>
     </header>
+  );
+
+  const DownloadAppModal = () => (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl">
+            <button 
+                onClick={() => setShowDownloadModal(false)} 
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+            >
+                <XIcon />
+            </button>
+            
+            <div className="text-center mb-8">
+                <div className="inline-flex p-3 rounded-2xl bg-indigo-500/10 mb-4">
+                    <Logo className="w-12 h-12" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">Instale o ClipSmart AI</h3>
+                <p className="text-zinc-400">Tenha o poder da IA diretamente no seu desktop ou celular.</p>
+            </div>
+            
+            <div className="space-y-4">
+                <button 
+                    onClick={() => { alert('Download da versão Windows iniciado (Simulação)'); setShowDownloadModal(false); }}
+                    className="w-full flex items-center justify-between p-4 bg-zinc-800 hover:bg-zinc-750 hover:border-indigo-500/50 border border-zinc-700 rounded-2xl transition-all group"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-[#0078D4]/10 text-[#0078D4] rounded-xl group-hover:bg-[#0078D4] group-hover:text-white transition-colors">
+                            <WindowsIcon />
+                        </div>
+                        <div className="text-left">
+                            <div className="font-semibold text-white">Windows</div>
+                            <div className="text-xs text-zinc-500">Versão 1.2.0 (x64)</div>
+                        </div>
+                    </div>
+                    <span className="text-zinc-500 group-hover:text-white transition-colors text-sm">Baixar .exe</span>
+                </button>
+
+                <button 
+                    onClick={() => { alert('Download da versão Android iniciado (Simulação)'); setShowDownloadModal(false); }}
+                    className="w-full flex items-center justify-between p-4 bg-zinc-800 hover:bg-zinc-750 hover:border-green-500/50 border border-zinc-700 rounded-2xl transition-all group"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-[#3DDC84]/10 text-[#3DDC84] rounded-xl group-hover:bg-[#3DDC84] group-hover:text-white transition-colors">
+                            <AndroidIcon />
+                        </div>
+                        <div className="text-left">
+                            <div className="font-semibold text-white">Android</div>
+                            <div className="text-xs text-zinc-500">APK Universal</div>
+                        </div>
+                    </div>
+                    <span className="text-zinc-500 group-hover:text-white transition-colors text-sm">Baixar .apk</span>
+                </button>
+            </div>
+        </div>
+    </div>
   );
 
   // --- Screens ---
@@ -282,676 +351,638 @@ const App: React.FC = () => {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl bg-zinc-900/50 rounded-3xl p-2 border border-zinc-800 backdrop-blur-sm">
-        <div className="flex bg-zinc-900 rounded-2xl mb-6 p-1 relative">
+      <div className="w-full max-w-2xl bg-zinc-900/50 rounded-3xl p-2 border border-zinc-800 backdrop-blur-sm shadow-xl">
+        {/* Tabs */}
+        <div className="flex bg-zinc-950/50 rounded-2xl mb-6 p-1 relative">
              <div 
-                className={`absolute top-1 bottom-1 w-1/2 bg-zinc-800 rounded-xl transition-all duration-300 ${activeTab === 'youtube' ? 'translate-x-full' : 'translate-x-0'}`}
+                className={`absolute top-1 bottom-1 w-1/2 bg-zinc-800 rounded-xl transition-all duration-300 shadow-md ${activeTab === 'upload' ? 'left-1' : 'left-[calc(50%-4px)] translate-x-[calc(0%+4px)]'}`}
              ></div>
              <button 
                 onClick={() => setActiveTab('upload')}
-                className={`flex-1 py-3 text-sm font-bold z-10 transition-colors ${activeTab === 'upload' ? 'text-white' : 'text-zinc-500'}`}
+                className={`flex-1 py-3 relative z-10 font-medium transition-colors ${activeTab === 'upload' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
              >
-                Arquivo de Vídeo
+                📁 Enviar Arquivo
              </button>
              <button 
                 onClick={() => setActiveTab('youtube')}
-                className={`flex-1 py-3 text-sm font-bold z-10 transition-colors ${activeTab === 'youtube' ? 'text-white' : 'text-zinc-500'}`}
+                className={`flex-1 py-3 relative z-10 font-medium transition-colors ${activeTab === 'youtube' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
              >
-                Link do YouTube
+                📺 YouTube Link
              </button>
         </div>
 
-        <div className="min-h-[250px] flex flex-col justify-center">
+        <div className="p-4">
             {activeTab === 'upload' ? (
                 <div 
-                    className="flex-1 border-2 border-dashed border-zinc-700/50 rounded-2xl flex flex-col items-center justify-center p-8 hover:bg-zinc-800/50 hover:border-indigo-500/50 transition-all cursor-pointer group m-4"
                     onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-zinc-700 hover:border-indigo-500 hover:bg-zinc-800/30 rounded-2xl p-10 cursor-pointer transition-all group flex flex-col items-center justify-center min-h-[300px]"
                 >
                     <UploadIcon />
-                    <h3 className="text-lg font-semibold text-white mb-1">Upload do Computador</h3>
-                    <p className="text-zinc-500 text-sm">MP4, MOV (Até 50MB)</p>
-                    <input type="file" ref={fileInputRef} className="hidden" accept="video/*" onChange={handleFileChange} />
+                    <span className="text-lg font-medium text-white group-hover:text-indigo-300">
+                        Clique para enviar seu vídeo
+                    </span>
+                    <span className="text-sm text-zinc-500 mt-2">MP4, MOV ou AVI (Max 50MB)</span>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        accept="video/*" 
+                        className="hidden" 
+                    />
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-center p-8">
-                     <div className="relative mb-4">
-                        <input 
-                            type="text" 
-                            placeholder="Cole o link do YouTube aqui..." 
-                            className={`w-full pl-12 pr-4 py-4 bg-black/40 border ${youtubeError ? 'border-red-500' : 'border-zinc-700 focus:border-indigo-500'} rounded-2xl text-white placeholder-zinc-600 focus:outline-none transition-all`}
-                            value={youtubeUrl}
-                            onChange={handleYoutubeChange}
-                        />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
-                            <LinkIcon />
-                        </div>
-                     </div>
-                     
-                     {youtubePreview && (
-                         <div className="animate-fade-in space-y-4">
-                             <div className="flex gap-4 items-center bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-                                <img src={youtubePreview.thumb} className="w-20 h-12 object-cover rounded-lg" alt="thumb" />
-                                <div className="text-left overflow-hidden">
-                                    <p className="text-white text-sm font-bold truncate">Vídeo Detectado</p>
-                                    <p className="text-xs text-zinc-500">Pronto para processar</p>
+                <div className="flex flex-col items-center justify-center min-h-[300px] gap-6">
+                    {youtubePreview ? (
+                        <div className="w-full animate-fade-in">
+                            <div className="relative aspect-video w-full rounded-xl overflow-hidden shadow-2xl border border-zinc-700 mb-6 group">
+                                <img src={youtubePreview.thumb} alt="Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-red-600 text-white p-3 rounded-full shadow-lg">
+                                        <PlayIcon />
+                                    </div>
                                 </div>
-                             </div>
-                             <button 
+                                <button 
+                                    onClick={() => { setYoutubeUrl(""); setYoutubePreview(null); }}
+                                    className="absolute top-2 right-2 bg-black/60 p-1 rounded-full text-white hover:bg-red-500 transition-colors"
+                                >
+                                    <XIcon />
+                                </button>
+                            </div>
+                            <button 
                                 onClick={handleYoutubeConfirm}
-                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all"
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02]"
                             >
-                                Gerar Clipes
+                                ✨ Gerar Clipes com IA
                             </button>
-                         </div>
-                     )}
-                     {youtubeError && <p className="text-red-500 text-sm">{youtubeError}</p>}
+                        </div>
+                    ) : (
+                        <div className="w-full space-y-4">
+                            <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-4 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                                <LinkIcon />
+                                <input 
+                                    type="text" 
+                                    placeholder="Cole o link do YouTube aqui..." 
+                                    value={youtubeUrl}
+                                    onChange={handleYoutubeChange}
+                                    className="bg-transparent border-none outline-none text-white w-full placeholder-zinc-600"
+                                    autoFocus
+                                />
+                            </div>
+                            {youtubeError && <p className="text-red-400 text-sm text-left pl-2">{youtubeError}</p>}
+                            <p className="text-zinc-500 text-sm">Cole um link válido para visualizar a prévia.</p>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
+      </div>
+
+      <div className="mt-8 flex gap-4 overflow-x-auto pb-4 w-full max-w-2xl justify-center">
+         {Object.values(ClipStyle).map((style) => (
+             <button
+                key={style}
+                onClick={() => setCurrentStyle(style)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${currentStyle === style ? 'bg-white text-black' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+             >
+                {style}
+             </button>
+         ))}
       </div>
     </div>
   );
 
   const renderProcessing = () => (
-    <div className="flex flex-col items-center justify-center min-h-[85vh] p-6 text-center animate-fade-in">
-        <Logo className="w-20 h-20 mb-8 animate-pulse" />
-        <h2 className="text-3xl font-bold text-white mb-4">A IA está trabalhando</h2>
-        <p className="text-zinc-400 mb-8">{processingStatus}</p>
-        <div className="w-64 h-2 bg-zinc-900 rounded-full overflow-hidden">
-            <div className="h-full bg-indigo-500 transition-all duration-300 rounded-full" style={{ width: `${processingProgress}%` }}></div>
-        </div>
+    <div className="flex flex-col items-center justify-center h-[80vh] text-center animate-fade-in">
+      <div className="relative w-24 h-24 mb-8">
+         <div className="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
+         <div className="absolute inset-0 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+         <Logo className="absolute inset-0 m-auto w-10 h-10 animate-pulse" />
+      </div>
+      <h2 className="text-3xl font-bold text-white mb-2">{processingStatus}</h2>
+      <p className="text-zinc-400 mb-8">Analisando áudio, vídeo e contexto...</p>
+      
+      <div className="w-full max-w-md bg-zinc-800 rounded-full h-2 overflow-hidden">
+        <div 
+            className="h-full bg-indigo-500 transition-all duration-300 ease-out"
+            style={{ width: `${processingProgress}%` }}
+        ></div>
+      </div>
+      <p className="mt-2 text-zinc-500 font-mono text-sm">{Math.round(processingProgress)}%</p>
     </div>
   );
 
-  // Immersive Preview Modal
-  const PreviewModal = () => {
-    if (!previewClip) return null;
-
-    const clipDuration = previewClip.endTime - previewClip.startTime;
-    const currentProgress = Math.max(0, Math.min(100, ((previewCurrentTime - previewClip.startTime) / clipDuration) * 100));
-
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 animate-fade-in">
-             <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" onClick={closePreview}></div>
-             
-             {/* Use dvh for mobile browser bar compatibility */}
-             <div className="relative w-full max-w-6xl h-[90vh] md:h-[90dvh] flex flex-col md:flex-row bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 animate-scale-up">
-                
-                {/* Close Button */}
-                <button 
-                    onClick={closePreview}
-                    className="absolute top-4 left-4 z-50 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 transition-colors backdrop-blur-md"
-                >
-                    <ChevronLeftIcon />
-                </button>
-
-                {/* Left: Immersive Video Player */}
-                <div className="flex-1 bg-black relative flex items-center justify-center group">
-                    {/* Background Blur Effect for Video Ambience */}
-                    <div className="absolute inset-0 opacity-20 blur-3xl scale-110 pointer-events-none">
-                         <img 
-                            src={videoMeta?.type === 'youtube' 
-                                ? `https://img.youtube.com/vi/${youtubeUrl.match(/v=([\w-]+)/)?.[1] || youtubeUrl.split('/').pop()}/hqdefault.jpg` 
-                                : 'placeholder' 
-                            } 
-                            className="w-full h-full object-cover" 
-                         />
-                    </div>
-                    
-                    <VideoPlayer
-                        videoUrl={videoMeta?.url || ''}
-                        startTime={previewClip.startTime}
-                        endTime={previewClip.endTime}
-                        isPlaying={isPlaying}
-                        aspectRatio="9:16"
-                        captionText={previewClip.transcript}
-                        showCaptions={true}
-                        captionStyle={captionStyle}
-                        className="h-full w-auto aspect-[9/16] max-h-full shadow-2xl z-10"
-                        onEnded={() => setIsPlaying(false)}
-                        onTimeUpdate={(t) => setPreviewCurrentTime(t)}
-                    />
-
-                    {/* Center Play Button Overlay */}
-                    <button 
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className={`absolute inset-0 z-20 flex items-center justify-center transition-all duration-300 ${isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100 bg-black/20'}`}
-                    >
-                        <div className="p-5 bg-white/10 backdrop-blur-lg border border-white/20 rounded-full text-white shadow-xl transform group-hover:scale-110 transition-transform">
-                             {isPlaying ? <PauseIcon /> : <PlayIcon />}
-                        </div>
-                    </button>
-
-                    {/* Progress Bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-800 z-30">
-                        <div 
-                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-100 ease-linear"
-                            style={{ width: `${currentProgress}%` }}
-                        />
-                    </div>
-                </div>
-
-                {/* Right: Controls & Info */}
-                <div className="w-full md:w-[380px] bg-zinc-950 flex flex-col border-l border-zinc-800">
-                    <div className="p-6 md:p-8 overflow-y-auto flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider">
-                                Viral Score {previewClip.viralityScore}
-                            </div>
-                            <div className="px-3 py-1 rounded-full bg-zinc-800 text-zinc-400 text-xs font-bold">
-                                {formatTime(clipDuration)}s
-                            </div>
-                        </div>
-
-                        <h2 className="text-2xl font-bold text-white mb-3 leading-tight">{previewClip.title}</h2>
-                        <p className="text-zinc-400 text-sm leading-relaxed mb-8">{previewClip.summary}</p>
-
-                        <div className="space-y-4">
-                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                Legenda Viral
-                            </label>
-                            <div className="p-4 bg-zinc-900 rounded-xl border border-zinc-800 text-zinc-300 text-sm italic relative group hover:border-indigo-500/50 transition-colors">
-                                "{previewClip.viralCaption}"
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                        onClick={() => navigator.clipboard.writeText(previewClip.viralCaption)}
-                                        className="text-xs text-indigo-400 hover:underline"
-                                    >
-                                        Copiar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Sticky Bottom Actions */}
-                    <div className="p-6 md:p-8 border-t border-zinc-800 bg-zinc-950 space-y-3">
-                         <button 
-                            onClick={() => handleEditClip(previewClip)}
-                            className="w-full py-4 bg-white hover:bg-zinc-200 text-black font-bold rounded-xl transition-all transform active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-white/5"
-                        >
-                            <ScissorsIcon /> Editar & Exportar
-                        </button>
-                        
-                        <div className="grid grid-cols-2 gap-3">
-                            <button 
-                                onClick={() => regenerateClip(previewClip)}
-                                className="py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white font-medium rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-2 text-sm"
-                            >
-                                <RefreshIcon /> Regenerar
-                            </button>
-                            <button 
-                                onClick={() => deleteClip(previewClip.id)}
-                                className="py-3 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 font-medium rounded-xl border border-red-500/10 transition-colors flex items-center justify-center gap-2 text-sm"
-                            >
-                                <TrashIcon /> Excluir
-                            </button>
-                        </div>
-                    </div>
-                </div>
-             </div>
-        </div>
-    );
-  };
-
   const renderSelection = () => (
-    <div className="min-h-[90vh] p-6 md:p-12 animate-fade-in">
-      <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-          <div>
-            <h2 className="text-4xl font-bold text-white mb-2">Clipes Prontos</h2>
-            <p className="text-zinc-400">Arraste os clipes para reordenar ou clique para visualizar.</p>
-          </div>
-          <div className="flex gap-4">
-             <button onClick={() => setScreen(AppScreen.UPLOAD)} className="text-zinc-500 hover:text-white px-4">Novo Vídeo</button>
-          </div>
-        </header>
+    <div className="p-6 max-w-6xl mx-auto animate-fade-in">
+      <div className="flex justify-between items-end mb-8">
+         <div>
+            <h2 className="text-3xl font-bold text-white mb-2">Clipes Gerados</h2>
+            <p className="text-zinc-400">Arraste para reordenar ou clique para pré-visualizar.</p>
+         </div>
+         <button onClick={() => setScreen(AppScreen.UPLOAD)} className="text-sm text-zinc-500 hover:text-white underline">
+            Novo Vídeo
+         </button>
+      </div>
 
-        {clips.length === 0 ? (
-            <div className="text-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800 border-dashed">
-                <p className="text-zinc-500">Nenhum clipe disponível. Tente processar novamente.</p>
-            </div>
-        ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {clips.map((clip, index) => (
-                <div 
-                    key={clip.id} 
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDrop={(e) => handleDrop(e, index)}
-                    onClick={() => openPreview(clip)}
-                    className={`bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden hover:border-indigo-500 transition-all cursor-pointer group shadow-xl hover:shadow-2xl hover:shadow-indigo-900/20 transform hover:-translate-y-1 relative
-                        ${draggedClipIndex === index ? 'opacity-50 scale-95 border-dashed border-indigo-500' : ''}
-                    `}
-                >
-                <div className="aspect-[9/16] bg-black relative overflow-hidden">
-                     {videoMeta?.type === 'file' ? (
-                        <video 
-                        src={videoMeta.url} 
-                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                        onLoadedMetadata={(e) => { e.currentTarget.currentTime = clip.startTime; }}
-                        />
-                    ) : (
-                        <img 
-                        src={`https://img.youtube.com/vi/${youtubeUrl.match(/v=([\w-]+)/)?.[1] || youtubeUrl.split('/').pop()}/hqdefault.jpg`}
-                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                        alt="Thumbnail"
+      <div className="flex flex-col gap-4">
+        {clips.map((clip, index) => {
+            const isRefining = refiningClipId === clip.id;
+            return (
+              <div 
+                key={clip.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`group relative bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 flex flex-col md:flex-row gap-6 transition-all hover:bg-zinc-800/30 ${isRefining ? 'opacity-70 pointer-events-none' : ''}`}
+              >
+                 {/* Drag Handle */}
+                 <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab text-zinc-600">
+                    <DragHandleIcon />
+                 </div>
+
+                 {/* Thumbnail / Video Preview */}
+                 <div className="relative w-full md:w-32 aspect-[9/16] bg-black rounded-lg overflow-hidden shrink-0 shadow-lg border border-zinc-800 self-center">
+                    {videoMeta && (
+                        <VideoPlayer 
+                            videoUrl={videoMeta.url}
+                            startTime={clip.startTime}
+                            endTime={clip.endTime}
+                            isPlaying={false}
+                            aspectRatio="9:16"
+                            showCaptions={false}
+                            className="pointer-events-none opacity-80"
                         />
                     )}
-                    
-                    {/* Hover Overlay with Action Buttons */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3 z-20 backdrop-blur-[2px]">
-                         {refiningClipId === clip.id ? (
-                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                         ) : (
-                             <>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleEditClip(clip); }}
-                                    className="px-6 py-2 bg-white text-black font-bold rounded-full hover:scale-105 hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-xl"
-                                >
-                                    <ScissorsIcon /> Editar
-                                </button>
-                                <div className="flex gap-3 mt-2">
-                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); handleSmartCut(clip); }}
-                                        className="p-3 bg-zinc-800 text-indigo-400 rounded-full hover:bg-indigo-500 hover:text-white transition-colors"
-                                        title="Corte Inteligente"
-                                     >
-                                         <MagicIcon />
-                                     </button>
-                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); regenerateClip(clip); }}
-                                        className="p-3 bg-zinc-800 text-zinc-300 rounded-full hover:bg-zinc-700 hover:text-white transition-colors"
-                                        title="Regenerar"
-                                     >
-                                         <RefreshIcon />
-                                     </button>
-                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); deleteClip(clip.id); }}
-                                        className="p-3 bg-zinc-800 text-red-400 rounded-full hover:bg-red-500 hover:text-white transition-colors"
-                                        title="Excluir"
-                                     >
-                                         <TrashIcon />
-                                     </button>
-                                </div>
-                             </>
-                         )}
-                    </div>
-
-                    <div className="absolute top-3 right-3 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg z-10 pointer-events-none">
-                        {clip.viralityScore} Viral Score
-                    </div>
-                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs font-mono px-2 py-1 rounded-lg z-10 pointer-events-none">
+                    <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[10px] font-mono text-white">
                         {formatTime(clip.endTime - clip.startTime)}
                     </div>
-                </div>
-                
-                <div className="p-6 relative">
-                    {/* Drag Handle */}
-                    <div className="absolute top-4 right-4 text-zinc-600 group-hover:text-zinc-400 cursor-grab active:cursor-grabbing p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-                         onMouseDown={(e) => e.stopPropagation()} // Prevent card click when clicking handle
+                    {/* Hover Play Overlay */}
+                    <div 
+                        onClick={() => openPreview(clip)}
+                        className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
-                         <DragHandleIcon />
+                         <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full text-white">
+                            <PlayIcon />
+                         </div>
                     </div>
+                 </div>
 
-                    <h3 className="font-bold text-lg text-white mb-2 line-clamp-1 group-hover:text-indigo-400 transition-colors pr-8">{clip.title}</h3>
-                    <p className="text-zinc-500 text-sm line-clamp-2">{clip.viralCaption}</p>
-                </div>
-                </div>
-            ))}
-            </div>
-        )}
+                 {/* Content */}
+                 <div className="flex-1 flex flex-col justify-center gap-2">
+                    <div className="flex items-start justify-between gap-4">
+                        <h3 className="text-xl font-bold text-white leading-tight">{clip.title}</h3>
+                        <div className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wide shrink-0 ${
+                            clip.viralityScore >= 9 ? 'bg-green-500/20 text-green-400' : 
+                            clip.viralityScore >= 7 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-700 text-zinc-400'
+                        }`}>
+                            Score {clip.viralityScore}
+                        </div>
+                    </div>
+                    
+                    <p className="text-zinc-300 text-sm bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50 font-medium">
+                        {clip.viralCaption}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-xs text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-md">
+                            {formatTime(clip.startTime)} - {formatTime(clip.endTime)}
+                        </span>
+                        <span className="text-xs text-indigo-400 bg-indigo-900/10 border border-indigo-900/20 px-2 py-1 rounded-md">
+                           #{clip.category}
+                        </span>
+                    </div>
+                 </div>
+
+                 {/* Actions Stack */}
+                 <div className="flex md:flex-col gap-2 items-stretch justify-center md:w-32 shrink-0">
+                    <button 
+                        onClick={() => { /* Logic to download would go here */ alert('Download iniciado!'); }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-zinc-900 text-sm font-bold rounded-lg transition-colors shadow-sm"
+                    >
+                        <DownloadIcon /> Baixar
+                    </button>
+                    <button 
+                        onClick={() => handleEditClip(clip)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-white rounded-lg transition-colors border border-zinc-700"
+                    >
+                        <ScissorsIcon /> Editar
+                    </button>
+                    <button 
+                         onClick={() => handleSmartCut(clip)}
+                         disabled={isRefining}
+                         className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 text-sm font-medium rounded-lg transition-colors border border-indigo-500/20"
+                    >
+                         {isRefining ? <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/> : <MagicIcon />}
+                         {isRefining ? 'Refinando' : 'Smart Cut'}
+                    </button>
+                    <div className="flex gap-2">
+                         <button 
+                            onClick={() => regenerateClip(clip)}
+                            title="Regenerar Clipe"
+                            className="flex-1 flex items-center justify-center py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg border border-zinc-700"
+                         >
+                            <RefreshIcon />
+                         </button>
+                         <button 
+                            onClick={() => deleteClip(clip.id)}
+                            title="Excluir Clipe"
+                            className="flex-1 flex items-center justify-center py-2 bg-zinc-800 hover:bg-red-900/30 text-zinc-400 hover:text-red-400 rounded-lg border border-zinc-700 hover:border-red-900/50"
+                         >
+                            <TrashIcon />
+                         </button>
+                    </div>
+                 </div>
+              </div>
+            );
+        })}
       </div>
-      <PreviewModal />
     </div>
   );
 
   const renderEditor = () => {
     if (!editedClip || !videoMeta) return null;
 
-    // Calculate percentages for timeline
-    const totalDuration = videoMeta.duration || 600; // Default if not avail
-    const startPct = (editedClip.startTime / totalDuration) * 100;
-    const endPct = (editedClip.endTime / totalDuration) * 100;
-    const widthPct = endPct - startPct;
+    const clipDuration = editedClip.endTime - editedClip.startTime;
 
     return (
-      <div className="h-[90vh] md:h-[90dvh] flex flex-col md:flex-row bg-black">
-        {/* CSS for Range Inputs - Cross Browser Compatible */}
-        <style>{`
-          /* Standard and WebKit */
-          input[type=range] {
-            -webkit-appearance: none;
-            background: transparent;
-          }
-          
-          /* WebKit Slider Thumb */
-          input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            pointer-events: auto;
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 50%;
-            border: 2px solid #6366f1; /* indigo-500 */
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin-top: -10px; /* Aligns middle of thumb with middle of track */
-            position: relative;
-            z-index: 50;
-          }
-          
-          /* Firefox Slider Thumb */
-          input[type=range]::-moz-range-thumb {
-            pointer-events: auto;
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 50%;
-            border: 2px solid #6366f1;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            transform: translateY(0px); /* Firefox doesn't need margin hack usually if track is standard */
-            z-index: 50;
-          }
-
-          /* Track Cleanup to remove default borders */
-          input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            border: none;
-          }
-          input[type=range]::-moz-range-track {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            border: none;
-          }
-
-           /* Custom scrollbar for horizontal scrolling timeline */
-           .custom-scrollbar::-webkit-scrollbar {
-            height: 6px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: #18181b;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #3f3f46;
-            border-radius: 3px;
-          }
-        `}</style>
-
-        <div className="flex-1 flex flex-col items-center justify-center relative p-8 gap-6">
-             <button 
-                onClick={() => { setScreen(AppScreen.SELECTION); setIsPlaying(false); }}
-                className="absolute top-6 left-6 z-20 flex items-center gap-2 text-zinc-400 hover:text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md"
-            >
-                <ChevronLeftIcon /> Voltar
-            </button>
-            
-            <div className="absolute top-6 right-6 z-20 flex items-center gap-2 text-xs text-green-500 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-md pointer-events-none animate-fade-in">
-                <CheckIcon /> Salvo automaticamente
+      <div className="h-[calc(100vh-80px)] flex flex-col md:flex-row overflow-hidden animate-fade-in">
+        
+        {/* Main Editor Area */}
+        <div className="flex-1 flex flex-col relative bg-zinc-950">
+            {/* Toolbar */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-black/80 backdrop-blur rounded-full px-4 py-2 border border-white/10 shadow-xl">
+                 <button onClick={() => setIsPlaying(!isPlaying)} className="text-white hover:text-indigo-400 transition-colors">
+                     {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                 </button>
+                 <div className="w-px h-6 bg-white/20 mx-1"></div>
+                 <button 
+                    onClick={() => setExportRatio('9:16')} 
+                    className={`text-xs font-bold px-2 py-1 rounded ${exportRatio === '9:16' ? 'bg-white text-black' : 'text-zinc-400'}`}
+                 >9:16</button>
+                 <button 
+                    onClick={() => setExportRatio('1:1')} 
+                    className={`text-xs font-bold px-2 py-1 rounded ${exportRatio === '1:1' ? 'bg-white text-black' : 'text-zinc-400'}`}
+                 >1:1</button>
             </div>
-            
-            {/* Video Player Container */}
-            <div className="relative flex-1 w-full max-h-[55vh] flex items-center justify-center group">
-                 <VideoPlayer
-                    videoUrl={videoMeta.url}
-                    startTime={editedClip.startTime}
-                    endTime={editedClip.endTime}
-                    isPlaying={isPlaying}
-                    aspectRatio={exportRatio}
-                    captionText={editedClip.transcript}
-                    showCaptions={showCaptions}
-                    captionStyle={captionStyle}
-                    cropPosition={cropPosition}
-                    className="h-full shadow-2xl"
-                    onEnded={() => setIsPlaying(false)}
-                />
 
-                {/* Drag hint overlay */}
-                {exportRatio !== '16:9' && !isPlaying && (
-                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <div className="bg-black/60 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                            Arraste para ajustar o enquadramento
-                         </div>
+            {/* Viewport */}
+            <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative group">
+                {isDetectingSubject && (
+                    <div className="absolute z-30 inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white/10 border border-white/20 p-4 rounded-xl flex items-center gap-3">
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                            <span className="text-white font-medium">Detectando sujeito com IA...</span>
+                        </div>
                     </div>
                 )}
+                
+                {/* Crop Instructions Overlay */}
+                <div className="absolute top-8 right-8 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-lg pointer-events-none">
+                    Arraste o vídeo para ajustar o enquadramento
+                </div>
 
-                <div className="absolute bottom-10 flex gap-4 z-20 pointer-events-none">
-                    <button onClick={() => setIsPlaying(!isPlaying)} className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform shadow-xl pointer-events-auto">
-                        {isPlaying ? <PauseIcon /> : <PlayIcon />}
-                    </button>
+                <div className={`relative shadow-2xl transition-all duration-500 ${exportRatio === '9:16' ? 'h-full aspect-[9/16]' : 'w-full max-w-2xl aspect-video'}`}>
+                     <VideoPlayer 
+                        videoUrl={videoMeta.url}
+                        startTime={editedClip.startTime}
+                        endTime={editedClip.endTime}
+                        isPlaying={isPlaying}
+                        aspectRatio={exportRatio}
+                        captionText={editedClip.transcript} // Simplified transcript logic
+                        showCaptions={showCaptions}
+                        captionStyle={captionStyle}
+                        captionTextColor={captionTextColor}
+                        captionBgColor={captionBgColor}
+                        captionFontSize={captionFontSize}
+                        cropPosition={cropPosition}
+                        className="rounded-lg bg-black"
+                     />
                 </div>
             </div>
 
-            {/* Timeline Tools */}
-            <div className="w-full max-w-4xl flex items-center justify-between px-2">
-                 <div className="text-zinc-400 text-xs font-mono">
-                     <span>Início: <span className="text-white">{formatTime(editedClip.startTime)}</span></span>
-                     <span className="mx-3 text-zinc-600">|</span>
-                     <span>Fim: <span className="text-white">{formatTime(editedClip.endTime)}</span></span>
-                 </div>
-                 <div className="flex items-center gap-2 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
-                      <button 
-                         onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))}
-                         className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded"
-                         title="Zoom Out"
-                      >
-                         <ZoomOutIcon />
-                      </button>
-                      <span className="text-xs text-zinc-500 font-mono w-8 text-center">{zoomLevel}x</span>
-                      <button 
-                         onClick={() => setZoomLevel(Math.min(5, zoomLevel + 0.5))}
-                         className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded"
-                         title="Zoom In"
-                      >
-                         <ZoomInIcon />
-                      </button>
-                      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
-                      <button 
-                         onClick={() => setZoomLevel(1)}
-                         className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded"
-                         title="Ajustar à tela"
-                      >
-                         <SearchIcon />
-                      </button>
-                 </div>
-            </div>
+            {/* Precise Timeline Trimmer */}
+            <div className="h-48 bg-zinc-900 border-t border-zinc-800 p-4 flex flex-col gap-4 z-20">
+                <div className="flex justify-between items-center px-2">
+                    <span className="text-xs font-mono text-zinc-500">{formatTime(editedClip.startTime)}</span>
+                    <div className="flex gap-2 bg-black/50 rounded-lg p-1">
+                        <button onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))} className="p-1 hover:text-white text-zinc-400"><ZoomOutIcon/></button>
+                        <span className="text-xs text-zinc-500 w-8 text-center my-auto">{zoomLevel}x</span>
+                        <button onClick={() => setZoomLevel(Math.min(5, zoomLevel + 0.5))} className="p-1 hover:text-white text-zinc-400"><ZoomInIcon/></button>
+                    </div>
+                    <span className="text-xs font-mono text-zinc-500">{formatTime(editedClip.endTime)}</span>
+                </div>
 
-            {/* Visual Timeline Trimmer */}
-            <div className="w-full max-w-4xl px-2 pb-2 overflow-hidden">
-                 <div className="w-full overflow-x-auto custom-scrollbar pb-4">
-                     <div 
-                        className="relative h-14 bg-zinc-900/50 rounded-xl border border-zinc-800/50 transition-all duration-300"
-                        style={{ width: `${zoomLevel * 100}%` }}
-                     >
-                          {/* Background Track / Waveform Sim */}
-                          <div className="absolute inset-0 flex items-center px-2 opacity-20">
-                               <div className="w-full h-1/2 bg-repeat-x" style={{ backgroundImage: 'linear-gradient(90deg, transparent 0%, transparent 49%, #52525b 50%, transparent 51%)', backgroundSize: '10px 100%' }}></div>
-                          </div>
+                {/* Timeline Track with Zoom Scroll */}
+                <div className="relative h-12 w-full bg-zinc-950 rounded-lg overflow-x-auto overflow-y-hidden select-none custom-scrollbar">
+                     <div className="relative h-full" style={{ width: `${zoomLevel * 100}%` }}>
+                        {/* Background ticks */}
+                        <div className="absolute inset-0 flex justify-between px-2 opacity-20 pointer-events-none">
+                             {Array.from({length: 20 * zoomLevel}).map((_, i) => (
+                                 <div key={i} className="w-px h-full bg-zinc-500"></div>
+                             ))}
+                        </div>
+                        
+                        {/* Active Region */}
+                        <div 
+                            className="absolute top-0 bottom-0 bg-indigo-500/20 border-x-2 border-indigo-500 h-full"
+                            style={{
+                                left: `${(editedClip.startTime / videoMeta.duration) * 100}%`,
+                                width: `${((editedClip.endTime - editedClip.startTime) / videoMeta.duration) * 100}%`
+                            }}
+                        ></div>
 
-                          <div className="absolute w-full h-full flex items-center">
-                               {/* Highlighted Region */}
-                               <div 
-                                  className="absolute h-full bg-indigo-500/20 border-x-2 border-indigo-500 box-border z-10"
-                                  style={{ left: `${startPct}%`, width: `${widthPct}%` }}
-                               >
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
-                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500"></div>
-                               </div>
-
-                                {/* Start Slider Input */}
-                                <input 
-                                   type="range"
-                                   min={0}
-                                   max={totalDuration}
-                                   step={0.1 / zoomLevel} // Finer step when zoomed in
-                                   value={editedClip.startTime}
-                                   onChange={(e) => {
-                                       const val = Number(e.target.value);
-                                       if(val < editedClip.endTime - 0.5) {
-                                           saveClipChange({...editedClip, startTime: val});
-                                           setIsPlaying(false);
-                                       }
-                                   }}
-                                   className="absolute w-full h-full appearance-none bg-transparent pointer-events-auto z-20 opacity-0 cursor-ew-resize"
-                                   style={{ pointerEvents: 'none' }} // Let container handle clicks, but thumbs need pointer events. Done via CSS above.
-                                />
-                                
-                                {/* End Slider Input */}
-                                <input 
-                                   type="range"
-                                   min={0}
-                                   max={totalDuration}
-                                   step={0.1 / zoomLevel}
-                                   value={editedClip.endTime}
-                                   onChange={(e) => {
-                                       const val = Number(e.target.value);
-                                       if(val > editedClip.startTime + 0.5) {
-                                           saveClipChange({...editedClip, endTime: val});
-                                           setIsPlaying(false);
-                                       }
-                                   }}
-                                   className="absolute w-full h-full appearance-none bg-transparent pointer-events-auto z-20 opacity-0 cursor-ew-resize"
-                                    style={{ pointerEvents: 'none' }}
-                                />
-                          </div>
+                        {/* Range Inputs (Invisible but interactive) */}
+                        <input 
+                            type="range" 
+                            min={0} 
+                            max={videoMeta.duration} 
+                            step={0.1}
+                            value={editedClip.startTime}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (val < editedClip.endTime - 1) saveClipChange({ ...editedClip, startTime: val });
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20 appearance-none pointer-events-auto"
+                        />
+                         <input 
+                            type="range" 
+                            min={0} 
+                            max={videoMeta.duration} 
+                            step={0.1}
+                            value={editedClip.endTime}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (val > editedClip.startTime + 1) saveClipChange({ ...editedClip, endTime: val });
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20 appearance-none pointer-events-auto"
+                        />
                      </div>
-                 </div>
+                </div>
 
-                 {/* Fine Tuning Controls */}
-                 <div className="flex justify-between items-center mt-4 px-1">
-                      <div className="flex gap-2 items-center">
-                           <span className="text-zinc-500 text-xs font-bold uppercase mr-2">Início</span>
-                           <button onClick={() => adjustTime('start', -0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="-0.1s"><MinusIcon /></button>
-                           <button onClick={() => adjustTime('start', 0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="+0.1s"><PlusIcon /></button>
-                      </div>
-                      
-                      <div className="flex gap-2 items-center">
-                           <span className="text-zinc-500 text-xs font-bold uppercase mr-2">Fim</span>
-                           <button onClick={() => adjustTime('end', -0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="-0.1s"><MinusIcon /></button>
-                           <button onClick={() => adjustTime('end', 0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="+0.1s"><PlusIcon /></button>
-                      </div>
-                 </div>
+                <div className="flex justify-between items-center text-sm">
+                    <div className="flex gap-2">
+                        <button onClick={() => adjustTime('start', -0.1)} className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 text-zinc-400"><MinusIcon/></button>
+                        <button onClick={() => adjustTime('start', 0.1)} className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 text-zinc-400"><PlusIcon/></button>
+                        <span className="ml-2 text-zinc-400 text-xs my-auto">Ajuste Início</span>
+                    </div>
+                    <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/20">{clipDuration.toFixed(1)}s</span>
+                    <div className="flex gap-2">
+                        <span className="mr-2 text-zinc-400 text-xs my-auto">Ajuste Fim</span>
+                        <button onClick={() => adjustTime('end', -0.1)} className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 text-zinc-400"><MinusIcon/></button>
+                        <button onClick={() => adjustTime('end', 0.1)} className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 text-zinc-400"><PlusIcon/></button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div className="w-full md:w-96 bg-zinc-900 border-l border-zinc-800 p-8 flex flex-col gap-8 overflow-y-auto">
-             <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Ajuste Final</h2>
-                <p className="text-zinc-500 text-sm">Prepare seu clipe para postar.</p>
-            </div>
+        {/* Sidebar Controls */}
+        <div className="w-full md:w-80 bg-zinc-900 border-l border-zinc-800 flex flex-col overflow-y-auto">
+             <div className="p-6 border-b border-zinc-800">
+                <h3 className="text-white font-bold mb-4">Aparência da Legenda</h3>
+                
+                <div className="flex items-center justify-between mb-4 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                    <span className="text-sm text-zinc-400">Mostrar Legendas</span>
+                    <button 
+                        onClick={() => setShowCaptions(!showCaptions)}
+                        className={`w-12 h-6 rounded-full p-1 transition-colors ${showCaptions ? 'bg-indigo-600' : 'bg-zinc-700'}`}
+                    >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showCaptions ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </button>
+                </div>
 
-            {/* Smart Crop Section */}
-            <div className="space-y-4">
-                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                     <CropIcon /> Enquadramento Inteligente
-                 </label>
+                {/* Style Selector */}
+                <label className="text-xs text-zinc-500 mb-2 block uppercase font-bold tracking-wider">Estilo</label>
+                <div className="grid grid-cols-2 gap-2 mb-6">
+                    {Object.values(CaptionStyle).map((style) => (
+                        <button 
+                            key={style}
+                            onClick={() => setCaptionStyle(style)}
+                            className={`p-2 rounded-lg border text-xs font-medium capitalize transition-all ${
+                                captionStyle === style 
+                                ? 'bg-indigo-600 border-indigo-500 text-white' 
+                                : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                            }`}
+                        >
+                            {style}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Colors & Size */}
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs text-zinc-500 mb-2 block uppercase font-bold tracking-wider">Cor do Texto</label>
+                        <div className="flex items-center gap-3">
+                            <input 
+                                type="color" 
+                                value={captionTextColor}
+                                onChange={(e) => setCaptionTextColor(e.target.value)}
+                                className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-none p-0"
+                            />
+                            <span className="text-xs font-mono text-zinc-400">{captionTextColor}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-xs text-zinc-500 mb-2 block uppercase font-bold tracking-wider">Cor do Fundo</label>
+                        <div className="flex items-center gap-2 mb-2">
+                             {/* Presets for BG (Transparent, Semi-Black, Solid Blue, etc) */}
+                             <button onClick={() => setCaptionBgColor("transparent")} className="w-6 h-6 rounded-full border border-zinc-700 bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-gray-900 via-gray-100 to-gray-900" title="Transparente"></button>
+                             <button onClick={() => setCaptionBgColor("rgba(0,0,0,0.6)")} className="w-6 h-6 rounded-full border border-zinc-700 bg-black/60" title="Preto Translúcido"></button>
+                             <button onClick={() => setCaptionBgColor("#000000")} className="w-6 h-6 rounded-full border border-zinc-700 bg-black" title="Preto Sólido"></button>
+                             <button onClick={() => setCaptionBgColor("#4f46e5")} className="w-6 h-6 rounded-full border border-zinc-700 bg-indigo-600" title="Indigo"></button>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <input 
+                                type="color" 
+                                value={captionBgColor.startsWith('#') ? captionBgColor : "#000000"} // Fallback for rgba in color input
+                                onChange={(e) => setCaptionBgColor(e.target.value)}
+                                className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-none p-0"
+                            />
+                            <span className="text-xs font-mono text-zinc-400 truncate max-w-[100px]">{captionBgColor}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-xs text-zinc-500 mb-2 block uppercase font-bold tracking-wider">Tamanho da Fonte: {captionFontSize}px</label>
+                        <input 
+                            type="range" 
+                            min="12" 
+                            max="48" 
+                            step="1"
+                            value={captionFontSize}
+                            onChange={(e) => setCaptionFontSize(Number(e.target.value))}
+                            className="w-full accent-indigo-500"
+                        />
+                    </div>
+                </div>
+             </div>
+
+             <div className="p-6 border-b border-zinc-800">
+                 <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                    <CropIcon /> Enquadramento
+                 </h3>
                  <button 
                     onClick={handleAutoReframe}
                     disabled={isDetectingSubject}
-                    className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-xl border border-zinc-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center gap-2 transition-all"
                  >
-                    {isDetectingSubject ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Detectando sujeito...
-                        </>
-                    ) : (
-                        <>
-                            <SparklesIcon /> Auto Reframe (IA)
-                        </>
-                    )}
+                    {isDetectingSubject ? <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/> : <SparklesIcon />}
+                    Auto Reframe (IA)
                  </button>
-            </div>
-            
-            <div className="space-y-4">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Formato</label>
-                <div className="grid grid-cols-3 gap-2">
-                    {['9:16', '1:1', '16:9'].map((ratio) => (
-                        <button key={ratio} onClick={() => setExportRatio(ratio as AspectRatio)} className={`py-3 text-sm rounded-xl font-medium transition-all ${exportRatio === ratio ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>{ratio}</button>
-                    ))}
-                </div>
-            </div>
+                 <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
+                    A IA detecta o sujeito principal e ajusta o recorte para 9:16 vertical.
+                 </p>
+             </div>
 
-            <div className="space-y-4">
-                 <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Legendas</label>
-                    <button onClick={() => setShowCaptions(!showCaptions)} className={`w-10 h-6 rounded-full p-1 transition-colors ${showCaptions ? 'bg-indigo-600' : 'bg-zinc-700'}`}>
-                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showCaptions ? 'translate-x-4' : ''}`} />
-                    </button>
-                 </div>
-                 
-                 {/* Caption Style Selector */}
-                 {showCaptions && (
-                     <div className="grid grid-cols-2 gap-2 mt-2">
-                         {[
-                             { id: CaptionStyle.MODERN, label: 'Moderno' },
-                             { id: CaptionStyle.CLASSIC, label: 'Clássico' },
-                             { id: CaptionStyle.HIGHLIGHT, label: 'Destaque' },
-                             { id: CaptionStyle.BOX, label: 'Box' },
-                         ].map((style) => (
-                             <button
-                                key={style.id}
-                                onClick={() => setCaptionStyle(style.id)}
-                                className={`py-2 text-xs font-bold rounded-lg border transition-all ${
-                                    captionStyle === style.id 
-                                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' 
-                                    : 'bg-zinc-800 border-transparent text-zinc-400 hover:bg-zinc-700'
-                                }`}
-                             >
-                                 {style.label}
-                             </button>
-                         ))}
-                     </div>
-                 )}
-
-                 <textarea 
-                    className="w-full bg-zinc-800 border-transparent focus:border-indigo-500 rounded-xl p-4 text-sm text-white resize-none h-32"
+             <div className="p-6 flex-1">
+                <h3 className="text-white font-bold mb-4">Transcrição</h3>
+                <textarea 
                     value={editedClip.transcript}
-                    onChange={(e) => saveClipChange({...editedClip, transcript: e.target.value})}
-                 />
-            </div>
+                    onChange={(e) => saveClipChange({ ...editedClip, transcript: e.target.value })}
+                    className="w-full h-40 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500 resize-none"
+                    placeholder="Edite a legenda aqui..."
+                />
+                <div className="flex items-center gap-2 mt-2 text-xs text-green-500 opacity-80">
+                    <CheckIcon /> {savingStatus || "Salvo automaticamente"}
+                </div>
+             </div>
 
-            <button onClick={() => setScreen(AppScreen.EXPORT)} className="mt-auto w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
-                <DownloadIcon /> Exportar Vídeo
-            </button>
+             <div className="p-6 border-t border-zinc-800">
+                <button 
+                    onClick={() => { setScreen(AppScreen.SELECTION); setIsPlaying(false); }}
+                    className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+                >
+                    Concluir Edição
+                </button>
+             </div>
         </div>
       </div>
     );
   };
 
-  const renderExport = () => (
-    <div className="flex flex-col items-center justify-center min-h-[85vh] p-6 text-center animate-fade-in">
-        <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-8 border border-green-500/30 animate-bounce-slow">
-            <svg className="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-        </div>
-        <h2 className="text-4xl font-bold text-white mb-2">Pronto para viralizar!</h2>
-        <p className="text-zinc-400 mb-10">O clipe foi processado com sucesso.</p>
-        
-        <div className="flex flex-col md:flex-row gap-4 w-full max-w-md">
-            <button className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all" onClick={() => alert("Download iniciado.")}>
-                Baixar MP4
+  const renderPreviewModal = () => {
+    if (!previewClip || !videoMeta) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-2xl animate-fade-in p-4 md:p-8">
+            <button 
+                onClick={closePreview}
+                className="absolute top-6 left-6 text-white/50 hover:text-white transition-colors flex items-center gap-2"
+            >
+                <ChevronLeftIcon /> Voltar
             </button>
-            <button className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-xl transition-all" onClick={() => setScreen(AppScreen.SELECTION)}>
-                Criar Outro
-            </button>
+
+            <div className="w-full max-w-6xl h-[85vh] flex flex-col md:flex-row gap-8 items-center">
+                 {/* Player Section */}
+                 <div className="flex-1 w-full h-full flex items-center justify-center relative">
+                    <div className="relative h-full max-h-[80vh] aspect-[9/16] rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.2)] border border-white/10 group">
+                        <VideoPlayer 
+                            videoUrl={videoMeta.url}
+                            startTime={previewClip.startTime}
+                            endTime={previewClip.endTime}
+                            isPlaying={isPlaying}
+                            aspectRatio="9:16"
+                            captionText={previewClip.transcript}
+                            showCaptions={true}
+                            className="h-full w-full object-cover"
+                            onTimeUpdate={(t) => setPreviewCurrentTime(t)}
+                        />
+                        
+                        {/* Immersive Play Control */}
+                        <div 
+                            className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                            onClick={() => setIsPlaying(!isPlaying)}
+                        >
+                            {!isPlaying && (
+                                <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white pl-2 hover:scale-110 transition-transform">
+                                    <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/10">
+                             <div 
+                                className="h-full bg-indigo-500"
+                                style={{ 
+                                    width: `${((previewCurrentTime - previewClip.startTime) / (previewClip.endTime - previewClip.startTime)) * 100}%` 
+                                }}
+                             ></div>
+                        </div>
+                    </div>
+                 </div>
+
+                 {/* Details Section */}
+                 <div className="w-full md:w-96 flex flex-col h-full justify-center gap-6">
+                     <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="bg-indigo-500 text-white text-xs font-bold px-2 py-1 rounded">VIRAL SCORE {previewClip.viralityScore}</span>
+                            <span className="text-zinc-500 text-sm font-mono">{formatTime(previewClip.endTime - previewClip.startTime)}</span>
+                        </div>
+                        <h2 className="text-3xl font-bold text-white leading-tight mb-4">{previewClip.title}</h2>
+                        
+                        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl mb-4 group cursor-pointer hover:border-zinc-700 transition-colors">
+                            <p className="text-zinc-300 text-sm italic">"{previewClip.viralCaption}"</p>
+                            <span className="text-xs text-zinc-600 mt-2 block group-hover:text-indigo-400 transition-colors">Clique para copiar legenda</span>
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 gap-3">
+                         <button 
+                            onClick={() => { /* Logic to download would go here */ alert('Download iniciado!'); }}
+                            className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                         >
+                            <DownloadIcon /> Baixar Clipe
+                         </button>
+                         <button 
+                            onClick={() => handleEditClip(previewClip)}
+                            className="w-full py-3 bg-zinc-800 text-white font-medium rounded-xl hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"
+                         >
+                            <ScissorsIcon /> Editar Ajustes
+                         </button>
+                         <div className="flex gap-3">
+                             <button 
+                                onClick={() => regenerateClip(previewClip)}
+                                className="flex-1 py-3 bg-zinc-800/50 text-zinc-400 hover:text-white rounded-xl border border-zinc-800 hover:bg-zinc-800 transition-colors flex justify-center"
+                             >
+                                <RefreshIcon />
+                             </button>
+                             <button 
+                                onClick={() => { deleteClip(previewClip.id); closePreview(); }}
+                                className="flex-1 py-3 bg-red-900/10 text-red-400 hover:bg-red-900/20 rounded-xl border border-red-900/20 hover:border-red-900/40 transition-colors flex justify-center"
+                             >
+                                <TrashIcon />
+                             </button>
+                         </div>
+                     </div>
+                 </div>
+            </div>
         </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-indigo-500/30">
       <Header />
-      {screen === AppScreen.UPLOAD && renderUpload()}
-      {screen === AppScreen.PROCESSING && renderProcessing()}
-      {screen === AppScreen.SELECTION && renderSelection()}
-      {screen === AppScreen.EDITOR && renderEditor()}
-      {screen === AppScreen.EXPORT && renderExport()}
+      
+      <main className="relative">
+        {screen === AppScreen.UPLOAD && renderUpload()}
+        {screen === AppScreen.PROCESSING && renderProcessing()}
+        {screen === AppScreen.SELECTION && renderSelection()}
+        {screen === AppScreen.EDITOR && renderEditor()}
+      </main>
+
+      {/* Modals */}
+      {previewClip && renderPreviewModal()}
+      {showDownloadModal && <DownloadAppModal />}
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+      `}</style>
     </div>
   );
 };
