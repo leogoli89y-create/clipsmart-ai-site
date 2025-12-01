@@ -39,16 +39,16 @@ export const analyzeVideoForClips = async (
           startTime: 30,
           endTime: 45,
           viralityScore: 9.8,
-          transcript: "Vocês não vão acreditar no que aconteceu aqui! É simplesmente insano."
+          transcript: "Vocês não vão acreditar no que aconteceu aqui! É simplesmente insano e mudou completamente a nossa percepção."
         },
         {
           title: "Segredo Revelado 🤫",
           summary: "A dica de ouro que estava escondida no vídeo.",
           viralCaption: "Quem mais sabia disso? Salva pra não esquecer! 👇 #dicas #lifehack #segredo",
           startTime: 120,
-          endTime: 150,
+          endTime: 135,
           viralityScore: 9.2,
-          transcript: "O segredo para entender isso é olhar para os detalhes que ninguém percebe."
+          transcript: "O segredo fundamental para entender isso é olhar para os detalhes minúsculos que a maioria das pessoas ignora."
         },
         {
           title: "Plot Twist do Ano 🔥",
@@ -57,7 +57,7 @@ export const analyzeVideoForClips = async (
           startTime: 200,
           endTime: 215,
           viralityScore: 9.5,
-          transcript: "E foi assim que tudo mudou para sempre. Incrível, não é?"
+          transcript: "E foi exatamente nesse momento que tudo mudou para sempre. A resposta estava na nossa frente o tempo todo."
         }
       ];
 
@@ -93,16 +93,22 @@ export const analyzeVideoForClips = async (
     }
 
     const prompt = `
-      Atue como um Especialista em Viralização de Conteúdo para TikTok, Instagram Reels e YouTube Shorts.
-      Analise este vídeo.
+      Atue como um Especialista em Edição de Vídeo com IA e Engenharia de Áudio Avançada.
+      
+      Sua tarefa é analisar o vídeo e gerar clipes virais.
+      
+      DIRETRIZES DE ÁUDIO E LEGENDA (CRÍTICO):
+      1. Transcrição de Alta Fidelidade: Realize uma transcrição Speech-to-Text precisa.
+      2. Correção de Ruído/Sotaque: Ignore ruídos de fundo. Se houver sotaques fortes ou fala rápida, transcreva a INTENÇÃO correta das palavras, corrigindo leves erros gramaticais para que a legenda seja legível e profissional.
+      3. Limpeza: Remova vícios de linguagem como "hmmm", "é...", "tipo assim", deixando o texto direto.
+      4. Sincronização: Certifique-se de que o texto transcrito pertence EXATAMENTE ao intervalo de tempo (startTime/endTime) selecionado.
+      
       ${styleInstruction}
       
       Sua missão: Encontrar 3 a 4 trechos com potencial EXTREMO de viralização.
-      
-      Critérios:
-      1. Gancho (Hook) forte nos primeiros 3 segundos.
-      2. Conteúdo que gera retenção.
-      3. Loop perfeito se possível.
+      Critérios de corte:
+      - Gancho (Hook) forte nos primeiros 3 segundos.
+      - Conteúdo que gera retenção.
       
       Para cada clipe, gere JSON com:
       - title: Título curto e apelativo (clickbait saudável).
@@ -110,7 +116,7 @@ export const analyzeVideoForClips = async (
       - viralCaption: Uma legenda pronta para postar, usando gatilhos mentais, emojis e 3 hashtags relevantes.
       - startTime / endTime: Segundos exatos.
       - viralityScore: Nota 1-10 baseada no potencial de engajamento.
-      - transcript: Transcrição da fala.
+      - transcript: Transcrição limpa e corrigida da fala neste trecho exato.
     `;
 
     const response = await ai.models.generateContent({
@@ -158,4 +164,17 @@ export const analyzeVideoForClips = async (
     console.error("Error analyzing video:", error);
     throw new Error("Falha ao analisar o vídeo. Tente um arquivo menor ou verifique sua conexão.");
   }
+};
+
+// Function for smart cut refinement
+export const refineClip = async (clip: Clip): Promise<Clip> => {
+    // In a real scenario, this would re-send the clip context to Gemini to ask for better start/end times
+    // For this demo, we mock the intelligence or could re-call generateContent with just timestamps if needed.
+    
+    // Simulating "AI Thinking" about audio waves and visual cues
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(clip);
+        }, 1000);
+    });
 };

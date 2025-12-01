@@ -22,6 +22,10 @@ const WindowsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6
 const DragHandleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-zinc-400 cursor-grab active:cursor-grabbing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>;
 const MinusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
+const ZoomInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>;
+const ZoomOutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
+const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>;
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.UPLOAD);
@@ -46,9 +50,13 @@ const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [exportRatio, setExportRatio] = useState<AspectRatio>('9:16');
   const [showCaptions, setShowCaptions] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   // Drag and Drop State
   const [draggedClipIndex, setDraggedClipIndex] = useState<number | null>(null);
+
+  // Smart Cut state
+  const [refiningClipId, setRefiningClipId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -142,6 +150,7 @@ const App: React.FC = () => {
   };
 
   const regenerateClip = async (clip: Clip) => {
+    setRefiningClipId(clip.id);
     const newId = `regen-${Date.now()}`;
     const newClip = { 
         ...clip, 
@@ -151,10 +160,32 @@ const App: React.FC = () => {
         summary: "Versão regenerada com foco diferente."
     };
     // Mock regeneration delay
-    setProcessingStatus("Regenerando...");
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1500));
     setClips(clips.map(c => c.id === clip.id ? newClip : c));
-    setPreviewClip(newClip);
+    if (previewClip?.id === clip.id) setPreviewClip(newClip);
+    setRefiningClipId(null);
+  };
+
+  const handleSmartCut = async (clip: Clip) => {
+    setRefiningClipId(clip.id);
+    
+    // Simulate smart cut logic
+    await new Promise(r => setTimeout(r, 1500));
+    
+    // Shift slightly to "Find Hook"
+    const duration = clip.endTime - clip.startTime;
+    const newStart = Math.max(0, clip.startTime - 2.5); 
+    const newEnd = newStart + duration;
+    
+    const refinedClip = {
+        ...clip,
+        startTime: newStart,
+        endTime: newEnd,
+        title: clip.title + " (Refinado)"
+    };
+    
+    setClips(clips.map(c => c.id === clip.id ? refinedClip : c));
+    setRefiningClipId(null);
   };
 
   const openPreview = (clip: Clip) => {
@@ -170,10 +201,20 @@ const App: React.FC = () => {
 
   const handleEditClip = (clip: Clip) => {
     setSelectedClip(clip);
-    setEditedClip({ ...clip }); 
+    // Find latest version from clips array in case it was edited before
+    const currentClipVersion = clips.find(c => c.id === clip.id) || clip;
+    setEditedClip({ ...currentClipVersion }); 
+    setZoomLevel(1); // Reset zoom
     setScreen(AppScreen.EDITOR);
     setIsPlaying(true);
     setPreviewClip(null);
+  };
+
+  // Centralized function to update edited clip and auto-save to global state
+  const saveClipChange = (updatedClip: Clip) => {
+    setEditedClip(updatedClip);
+    // Auto-save: Update the global clips array immediately
+    setClips(prevClips => prevClips.map(c => c.id === updatedClip.id ? updatedClip : c));
   };
 
   const adjustTime = (type: 'start' | 'end', amount: number) => {
@@ -187,7 +228,7 @@ const App: React.FC = () => {
         const newVal = Math.min(videoMeta.duration, Math.max(newClip.endTime + amount, newClip.startTime + 1));
         newClip.endTime = newVal;
     }
-    setEditedClip(newClip);
+    saveClipChange(newClip);
   };
 
   // Drag and Drop Handlers
@@ -511,7 +552,7 @@ const App: React.FC = () => {
                         ${draggedClipIndex === index ? 'opacity-50 scale-95 border-dashed border-indigo-500' : ''}
                     `}
                 >
-                <div className="aspect-[9/16] bg-black relative overflow-hidden pointer-events-none">
+                <div className="aspect-[9/16] bg-black relative overflow-hidden">
                      {videoMeta?.type === 'file' ? (
                         <video 
                         src={videoMeta.url} 
@@ -525,15 +566,50 @@ const App: React.FC = () => {
                         alt="Thumbnail"
                         />
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="bg-white/20 backdrop-blur-md p-4 rounded-full text-white">
-                            <PlayIcon />
-                        </div>
+                    
+                    {/* Hover Overlay with Action Buttons */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3 z-20 backdrop-blur-[2px]">
+                         {refiningClipId === clip.id ? (
+                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                         ) : (
+                             <>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleEditClip(clip); }}
+                                    className="px-6 py-2 bg-white text-black font-bold rounded-full hover:scale-105 hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-xl"
+                                >
+                                    <ScissorsIcon /> Editar
+                                </button>
+                                <div className="flex gap-3 mt-2">
+                                     <button 
+                                        onClick={(e) => { e.stopPropagation(); handleSmartCut(clip); }}
+                                        className="p-3 bg-zinc-800 text-indigo-400 rounded-full hover:bg-indigo-500 hover:text-white transition-colors"
+                                        title="Corte Inteligente"
+                                     >
+                                         <MagicIcon />
+                                     </button>
+                                     <button 
+                                        onClick={(e) => { e.stopPropagation(); regenerateClip(clip); }}
+                                        className="p-3 bg-zinc-800 text-zinc-300 rounded-full hover:bg-zinc-700 hover:text-white transition-colors"
+                                        title="Regenerar"
+                                     >
+                                         <RefreshIcon />
+                                     </button>
+                                     <button 
+                                        onClick={(e) => { e.stopPropagation(); deleteClip(clip.id); }}
+                                        className="p-3 bg-zinc-800 text-red-400 rounded-full hover:bg-red-500 hover:text-white transition-colors"
+                                        title="Excluir"
+                                     >
+                                         <TrashIcon />
+                                     </button>
+                                </div>
+                             </>
+                         )}
                     </div>
-                    <div className="absolute top-3 right-3 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg z-10">
+
+                    <div className="absolute top-3 right-3 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg z-10 pointer-events-none">
                         {clip.viralityScore} Viral Score
                     </div>
-                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs font-mono px-2 py-1 rounded-lg z-10">
+                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs font-mono px-2 py-1 rounded-lg z-10 pointer-events-none">
                         {formatTime(clip.endTime - clip.startTime)}
                     </div>
                 </div>
@@ -593,18 +669,33 @@ const App: React.FC = () => {
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
           }
+           /* Custom scrollbar for horizontal scrolling timeline */
+           .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #18181b;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+            border-radius: 3px;
+          }
         `}</style>
 
-        <div className="flex-1 flex flex-col items-center justify-center relative p-8 gap-8">
+        <div className="flex-1 flex flex-col items-center justify-center relative p-8 gap-6">
              <button 
                 onClick={() => { setScreen(AppScreen.SELECTION); setIsPlaying(false); }}
                 className="absolute top-6 left-6 z-20 flex items-center gap-2 text-zinc-400 hover:text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md"
             >
-                <ChevronLeftIcon /> Cancelar
+                <ChevronLeftIcon /> Voltar
             </button>
             
+            <div className="absolute top-6 right-6 z-20 flex items-center gap-2 text-xs text-green-500 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-md pointer-events-none animate-fade-in">
+                <CheckIcon /> Salvo automaticamente
+            </div>
+            
             {/* Video Player Container */}
-            <div className="relative flex-1 w-full max-h-[60vh] flex items-center justify-center">
+            <div className="relative flex-1 w-full max-h-[55vh] flex items-center justify-center">
                  <VideoPlayer
                     videoUrl={videoMeta.url}
                     startTime={editedClip.startTime}
@@ -623,69 +714,113 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            {/* Visual Timeline Trimmer */}
-            <div className="w-full max-w-4xl px-8 pb-4">
-                 <div className="flex justify-between text-zinc-400 text-xs font-mono mb-2">
-                     <span>{formatTime(editedClip.startTime)}</span>
-                     <span className="text-indigo-400">Duração: {formatTime(editedClip.endTime - editedClip.startTime)}</span>
-                     <span>{formatTime(editedClip.endTime)}</span>
+            {/* Timeline Tools */}
+            <div className="w-full max-w-4xl flex items-center justify-between px-2">
+                 <div className="text-zinc-400 text-xs font-mono">
+                     <span>Início: <span className="text-white">{formatTime(editedClip.startTime)}</span></span>
+                     <span className="mx-3 text-zinc-600">|</span>
+                     <span>Fim: <span className="text-white">{formatTime(editedClip.endTime)}</span></span>
                  </div>
-                 
-                 <div className="relative h-12 flex items-center">
-                      {/* Background Track */}
-                      <div className="absolute w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-                           {/* Highlighted Region */}
-                           <div 
-                              className="absolute h-full bg-indigo-500/50 border-x border-indigo-400"
-                              style={{ left: `${startPct}%`, width: `${widthPct}%` }}
-                           ></div>
-                      </div>
+                 <div className="flex items-center gap-2 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+                      <button 
+                         onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))}
+                         className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded"
+                         title="Zoom Out"
+                      >
+                         <ZoomOutIcon />
+                      </button>
+                      <span className="text-xs text-zinc-500 font-mono w-8 text-center">{zoomLevel}x</span>
+                      <button 
+                         onClick={() => setZoomLevel(Math.min(5, zoomLevel + 0.5))}
+                         className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded"
+                         title="Zoom In"
+                      >
+                         <ZoomInIcon />
+                      </button>
+                      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
+                      <button 
+                         onClick={() => setZoomLevel(1)}
+                         className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded"
+                         title="Ajustar à tela"
+                      >
+                         <SearchIcon />
+                      </button>
+                 </div>
+            </div>
 
-                      {/* Start Slider Input */}
-                      <input 
-                         type="range"
-                         min={0}
-                         max={totalDuration}
-                         step={0.1}
-                         value={editedClip.startTime}
-                         onChange={(e) => {
-                             const val = Number(e.target.value);
-                             if(val < editedClip.endTime - 1) {
-                                 setEditedClip({...editedClip, startTime: val});
-                                 setIsPlaying(false); // Pause on drag
-                             }
-                         }}
-                         className="absolute w-full h-2 appearance-none bg-transparent pointer-events-none z-30"
-                      />
+            {/* Visual Timeline Trimmer */}
+            <div className="w-full max-w-4xl px-2 pb-2 overflow-hidden">
+                 <div className="w-full overflow-x-auto custom-scrollbar pb-4">
+                     <div 
+                        className="relative h-14 bg-zinc-900/50 rounded-xl border border-zinc-800/50 transition-all duration-300"
+                        style={{ width: `${zoomLevel * 100}%` }}
+                     >
+                          {/* Background Track / Waveform Sim */}
+                          <div className="absolute inset-0 flex items-center px-2 opacity-20">
+                               <div className="w-full h-1/2 bg-repeat-x" style={{ backgroundImage: 'linear-gradient(90deg, transparent 0%, transparent 49%, #52525b 50%, transparent 51%)', backgroundSize: '10px 100%' }}></div>
+                          </div>
 
-                      {/* End Slider Input */}
-                      <input 
-                         type="range"
-                         min={0}
-                         max={totalDuration}
-                         step={0.1}
-                         value={editedClip.endTime}
-                         onChange={(e) => {
-                             const val = Number(e.target.value);
-                             if(val > editedClip.startTime + 1) {
-                                 setEditedClip({...editedClip, endTime: val});
-                                 setIsPlaying(false); // Pause on drag
-                             }
-                         }}
-                         className="absolute w-full h-2 appearance-none bg-transparent pointer-events-none z-30"
-                      />
+                          <div className="absolute w-full h-full flex items-center">
+                               {/* Highlighted Region */}
+                               <div 
+                                  className="absolute h-full bg-indigo-500/20 border-x-2 border-indigo-500 box-border z-10"
+                                  style={{ left: `${startPct}%`, width: `${widthPct}%` }}
+                               >
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500"></div>
+                               </div>
+
+                                {/* Start Slider Input */}
+                                <input 
+                                   type="range"
+                                   min={0}
+                                   max={totalDuration}
+                                   step={0.1 / zoomLevel} // Finer step when zoomed in
+                                   value={editedClip.startTime}
+                                   onChange={(e) => {
+                                       const val = Number(e.target.value);
+                                       if(val < editedClip.endTime - 0.5) {
+                                           saveClipChange({...editedClip, startTime: val});
+                                           setIsPlaying(false);
+                                       }
+                                   }}
+                                   className="absolute w-full h-full appearance-none bg-transparent pointer-events-auto z-20 opacity-0 cursor-ew-resize"
+                                   style={{ pointerEvents: 'none' }} // Let container handle clicks, but thumbs need pointer events. Done via CSS above.
+                                />
+                                
+                                {/* End Slider Input */}
+                                <input 
+                                   type="range"
+                                   min={0}
+                                   max={totalDuration}
+                                   step={0.1 / zoomLevel}
+                                   value={editedClip.endTime}
+                                   onChange={(e) => {
+                                       const val = Number(e.target.value);
+                                       if(val > editedClip.startTime + 0.5) {
+                                           saveClipChange({...editedClip, endTime: val});
+                                           setIsPlaying(false);
+                                       }
+                                   }}
+                                   className="absolute w-full h-full appearance-none bg-transparent pointer-events-auto z-20 opacity-0 cursor-ew-resize"
+                                    style={{ pointerEvents: 'none' }}
+                                />
+                          </div>
+                     </div>
                  </div>
 
                  {/* Fine Tuning Controls */}
-                 <div className="flex justify-between items-center mt-2">
-                      <div className="flex gap-2">
-                           <button onClick={() => adjustTime('start', -0.5)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white" title="-0.5s Início"><MinusIcon /></button>
-                           <button onClick={() => adjustTime('start', 0.5)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white" title="+0.5s Início"><PlusIcon /></button>
+                 <div className="flex justify-between items-center mt-4 px-1">
+                      <div className="flex gap-2 items-center">
+                           <span className="text-zinc-500 text-xs font-bold uppercase mr-2">Início</span>
+                           <button onClick={() => adjustTime('start', -0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="-0.1s"><MinusIcon /></button>
+                           <button onClick={() => adjustTime('start', 0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="+0.1s"><PlusIcon /></button>
                       </div>
-                      <div className="text-zinc-600 text-xs">Ajuste Fino</div>
-                      <div className="flex gap-2">
-                           <button onClick={() => adjustTime('end', -0.5)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white" title="-0.5s Fim"><MinusIcon /></button>
-                           <button onClick={() => adjustTime('end', 0.5)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white" title="+0.5s Fim"><PlusIcon /></button>
+                      
+                      <div className="flex gap-2 items-center">
+                           <span className="text-zinc-500 text-xs font-bold uppercase mr-2">Fim</span>
+                           <button onClick={() => adjustTime('end', -0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="-0.1s"><MinusIcon /></button>
+                           <button onClick={() => adjustTime('end', 0.1)} className="p-2 bg-zinc-900 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800" title="+0.1s"><PlusIcon /></button>
                       </div>
                  </div>
             </div>
@@ -716,7 +851,7 @@ const App: React.FC = () => {
                  <textarea 
                     className="w-full bg-zinc-800 border-transparent focus:border-indigo-500 rounded-xl p-4 text-sm text-white resize-none h-32"
                     value={editedClip.transcript}
-                    onChange={(e) => setEditedClip({...editedClip, transcript: e.target.value})}
+                    onChange={(e) => saveClipChange({...editedClip, transcript: e.target.value})}
                  />
             </div>
 
