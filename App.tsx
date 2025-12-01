@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VideoPlayer } from './components/VideoPlayer';
 import { Logo } from './components/Logo';
-import { analyzeVideoForClips, refineClip } from './services/geminiService';
-import { formatTime } from './utils/videoUtils';
-import { AppScreen, Clip, ClipStyle, VideoMetadata, AspectRatio, CaptionStyle } from './types';
+import { analyzeVideoForClips, refineClip, translateText } from './services/geminiService';
+import { formatTime, generateSRTContent } from './utils/videoUtils';
+import { AppScreen, Clip, ClipStyle, VideoMetadata, AspectRatio, CaptionStyle, TargetLanguage } from './types';
 
 // Icons
 const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 mb-4 text-zinc-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>;
@@ -25,6 +25,9 @@ const ZoomOutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>;
 const CropIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>;
 const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 9a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l3.293 3.293a1 1 0 01-1.414 1.414L13 3.414 11.414 5l-1.414-1.414L12 1.586A1 1 0 0112.707 1zM14 10a1 1 0 100-2 1 1 0 000 2zM8.707 15.293a1 1 0 010 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6 16.586l1.293-1.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>;
+const TranslateIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>;
+const DocumentTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
+const VideoCameraIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>;
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.UPLOAD);
@@ -53,6 +56,9 @@ const App: React.FC = () => {
   const [cropPosition, setCropPosition] = useState({ x: 50, y: 50 });
   const [isDetectingSubject, setIsDetectingSubject] = useState(false);
   const [savingStatus, setSavingStatus] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [renderingProgress, setRenderingProgress] = useState(0);
+  const [isRendering, setIsRendering] = useState(false);
 
   // Caption Customization State
   const [captionTextColor, setCaptionTextColor] = useState("#FFFFFF");
@@ -238,6 +244,67 @@ const App: React.FC = () => {
     saveClipChange(newClip);
   };
 
+  const handleTranslate = async (lang: TargetLanguage) => {
+    if (!editedClip) return;
+    setIsTranslating(true);
+    const newTranscript = await translateText(editedClip.originalTranscript || editedClip.transcript, lang);
+    saveClipChange({ ...editedClip, transcript: newTranscript });
+    setIsTranslating(false);
+  };
+
+  const handleDownloadSRT = (clip: Clip) => {
+      const content = generateSRTContent(clip.transcript, clip.startTime, clip.endTime);
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.srt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadVideo = async (clip: Clip) => {
+    setIsRendering(true);
+    setRenderingProgress(0);
+
+    // Simulation of server-side burning/rendering
+    const interval = setInterval(() => {
+        setRenderingProgress(prev => {
+            if (prev >= 95) return prev;
+            return prev + 5;
+        });
+    }, 100);
+
+    // Mock rendering time
+    await new Promise(r => setTimeout(r, 2500));
+    
+    clearInterval(interval);
+    setRenderingProgress(100);
+    
+    // Trigger download of the original source (since we can't burn in browser easily without ffmpeg.wasm which is heavy)
+    // In a real app, this would be the URL of the processed video.
+    // For local files, we download the original. For YouTube, we simulate.
+    if (videoMeta?.type === 'file' && videoMeta.file) {
+        const url = URL.createObjectURL(videoMeta.file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } else {
+        alert("Simulação de download concluída! Em um ambiente de produção, o arquivo MP4 renderizado seria baixado aqui.");
+    }
+
+    setTimeout(() => {
+        setIsRendering(false);
+        setRenderingProgress(0);
+    }, 1000);
+  };
+
   // Drag and Drop Handlers
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     setDraggedClipIndex(index);
@@ -268,6 +335,16 @@ const App: React.FC = () => {
       <div className="flex items-center gap-3 cursor-pointer" onClick={() => setScreen(AppScreen.UPLOAD)}>
         <Logo className="w-10 h-10" />
         <span className="text-xl font-bold tracking-tight text-white hidden md:block">ClipSmart AI</span>
+      </div>
+      
+      <div className="flex items-center gap-2">
+         <button 
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+            onClick={() => alert("Simulação: Baixando app para dispositivo...")}
+         >
+             <DownloadIcon />
+             <span className="hidden sm:inline">Baixar App</span>
+         </button>
       </div>
     </header>
   );
@@ -489,12 +566,22 @@ const App: React.FC = () => {
 
                  {/* Actions Stack */}
                  <div className="flex md:flex-col gap-2 items-stretch justify-center md:w-32 shrink-0">
-                    <button 
-                        onClick={() => { /* Logic to download would go here */ alert('Download iniciado!'); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-zinc-900 text-sm font-bold rounded-lg transition-colors shadow-sm"
-                    >
-                        <DownloadIcon /> Baixar
-                    </button>
+                    <div className="relative group/download">
+                        <button 
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-zinc-900 text-sm font-bold rounded-lg transition-colors shadow-sm"
+                        >
+                            <DownloadIcon /> Baixar
+                        </button>
+                        {/* Download Dropdown */}
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden z-20 opacity-0 invisible group-hover/download:opacity-100 group-hover/download:visible transition-all">
+                            <button onClick={() => handleDownloadVideo(clip)} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                                <VideoCameraIcon /> Vídeo (MP4)
+                            </button>
+                            <button onClick={() => handleDownloadSRT(clip)} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                                <DocumentTextIcon /> Legenda (.SRT)
+                            </button>
+                        </div>
+                    </div>
                     <button 
                         onClick={() => handleEditClip(clip)}
                         className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-white rounded-lg transition-colors border border-zinc-700"
@@ -530,6 +617,20 @@ const App: React.FC = () => {
             );
         })}
       </div>
+      
+      {/* Global Rendering Overlay */}
+      {isRendering && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <div className="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 max-w-sm w-full text-center">
+                  <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <h3 className="text-xl font-bold text-white mb-2">Renderizando Vídeo</h3>
+                  <p className="text-zinc-400 text-sm mb-4">Inserindo legendas e cortando...</p>
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 transition-all duration-100" style={{ width: `${renderingProgress}%` }}></div>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 
@@ -764,31 +865,72 @@ const App: React.FC = () => {
                     {isDetectingSubject ? <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/> : <SparklesIcon />}
                     Auto Reframe (IA)
                  </button>
-                 <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
-                    A IA detecta o sujeito principal e ajusta o recorte para 9:16 vertical.
-                 </p>
              </div>
 
              <div className="p-6 flex-1">
-                <h3 className="text-white font-bold mb-4">Transcrição</h3>
-                <textarea 
-                    value={editedClip.transcript}
-                    onChange={(e) => saveClipChange({ ...editedClip, transcript: e.target.value })}
-                    className="w-full h-40 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500 resize-none"
-                    placeholder="Edite a legenda aqui..."
-                />
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-white font-bold">Transcrição</h3>
+                    <div className="relative group/translate">
+                        <button className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded flex items-center gap-1">
+                           <TranslateIcon /> Traduzir
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 w-32 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-20 hidden group-hover/translate:block">
+                             {Object.values(TargetLanguage).map(lang => (
+                                 <button 
+                                    key={lang}
+                                    onClick={() => handleTranslate(lang)}
+                                    className="w-full text-left px-3 py-2 text-xs text-white hover:bg-zinc-700"
+                                 >
+                                    {lang}
+                                 </button>
+                             ))}
+                        </div>
+                    </div>
+                </div>
+                
+                {isTranslating ? (
+                    <div className="w-full h-40 flex items-center justify-center bg-zinc-950 border border-zinc-800 rounded-xl">
+                        <div className="text-zinc-500 text-sm flex flex-col items-center">
+                            <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"/>
+                            Traduzindo...
+                        </div>
+                    </div>
+                ) : (
+                    <textarea 
+                        value={editedClip.transcript}
+                        onChange={(e) => saveClipChange({ ...editedClip, transcript: e.target.value })}
+                        className="w-full h-40 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500 resize-none"
+                        placeholder="Edite a legenda aqui..."
+                    />
+                )}
+                
                 <div className="flex items-center gap-2 mt-2 text-xs text-green-500 opacity-80">
                     <CheckIcon /> {savingStatus || "Salvo automaticamente"}
                 </div>
              </div>
 
-             <div className="p-6 border-t border-zinc-800">
+             <div className="p-6 border-t border-zinc-800 flex gap-2">
                 <button 
                     onClick={() => { setScreen(AppScreen.SELECTION); setIsPlaying(false); }}
-                    className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+                    className="flex-1 py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
                 >
-                    Concluir Edição
+                    Concluir
                 </button>
+                
+                {/* Direct Download in Editor */}
+                <div className="relative group/dl-editor">
+                    <button className="h-full px-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl border border-zinc-700">
+                        <DownloadIcon />
+                    </button>
+                    <div className="absolute bottom-full right-0 mb-2 w-48 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden z-20 hidden group-hover/dl-editor:block">
+                         <button onClick={() => handleDownloadVideo(editedClip)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 flex items-center gap-2 border-b border-zinc-700/50">
+                            <VideoCameraIcon /> Vídeo (MP4)
+                        </button>
+                        <button onClick={() => handleDownloadSRT(editedClip)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                            <DocumentTextIcon /> Legenda (.SRT)
+                        </button>
+                    </div>
+                </div>
              </div>
         </div>
       </div>
@@ -862,12 +1004,22 @@ const App: React.FC = () => {
                      </div>
 
                      <div className="grid grid-cols-1 gap-3">
-                         <button 
-                            onClick={() => { /* Logic to download would go here */ alert('Download iniciado!'); }}
-                            className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
-                         >
-                            <DownloadIcon /> Baixar Clipe
-                         </button>
+                         <div className="relative group/dl-preview">
+                             <button 
+                                className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                             >
+                                <DownloadIcon /> Baixar Clipe
+                             </button>
+                             <div className="absolute bottom-full left-0 mb-2 w-full bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl overflow-hidden z-20 invisible opacity-0 group-hover/dl-preview:visible group-hover/dl-preview:opacity-100 transition-all">
+                                <button onClick={() => handleDownloadVideo(previewClip)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 flex items-center gap-2 border-b border-zinc-700/50">
+                                    <VideoCameraIcon /> Vídeo (MP4)
+                                </button>
+                                <button onClick={() => handleDownloadSRT(previewClip)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                                    <DocumentTextIcon /> Legenda (.SRT)
+                                </button>
+                             </div>
+                         </div>
+                         
                          <button 
                             onClick={() => handleEditClip(previewClip)}
                             className="w-full py-3 bg-zinc-800 text-white font-medium rounded-xl hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"

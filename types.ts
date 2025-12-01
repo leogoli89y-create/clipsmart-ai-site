@@ -16,6 +16,7 @@ export interface Clip {
   viralityScore: number; // 1-10
   category: string;
   transcript: string;
+  originalTranscript?: string; // To allow reverting translation
 }
 
 export enum ClipStyle {
@@ -32,6 +33,14 @@ export enum CaptionStyle {
   CLASSIC = 'classic',   // White text with shadow
   HIGHLIGHT = 'highlight', // Yellow/Bold text (TikTok style)
   BOX = 'box'           // Solid color box
+}
+
+export enum TargetLanguage {
+  PT = 'Português',
+  EN = 'Inglês',
+  ES = 'Espanhol',
+  FR = 'Francês',
+  DE = 'Alemão'
 }
 
 export type AspectRatio = '9:16' | '1:1' | '16:9';

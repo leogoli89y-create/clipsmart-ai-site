@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Clip, ClipStyle } from "../types";
+import { Clip, ClipStyle, TargetLanguage } from "../types";
 
 // Initialize the API client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
@@ -90,7 +90,8 @@ export const analyzeVideoForClips = async (
         endTime: c.endTime,
         viralityScore: c.viralityScore,
         category: style,
-        transcript: c.transcript
+        transcript: c.transcript,
+        originalTranscript: c.transcript
       }));
     }
 
@@ -177,7 +178,8 @@ export const analyzeVideoForClips = async (
       endTime: Number(c.endTime),
       viralityScore: c.viralityScore,
       category: style,
-      transcript: c.transcript
+      transcript: c.transcript,
+      originalTranscript: c.transcript
     }));
 
   } catch (error: any) {
@@ -197,6 +199,20 @@ export const analyzeVideoForClips = async (
       "OperationError"
     );
   }
+};
+
+export const translateText = async (text: string, targetLanguage: TargetLanguage): Promise<string> => {
+    try {
+        const prompt = `Translate the following subtitle text to ${targetLanguage}. Keep the tone casual and conversational if suitable for social media. Text: "${text}"`;
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Translation error", error);
+        return text; // Return original on failure
+    }
 };
 
 // Function for smart cut refinement
