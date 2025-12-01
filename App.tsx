@@ -337,14 +337,8 @@ const App: React.FC = () => {
         <span className="text-xl font-bold tracking-tight text-white hidden md:block">ClipSmart AI</span>
       </div>
       
+      {/* Empty div or removed controls area */}
       <div className="flex items-center gap-2">
-         <button 
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-            onClick={() => alert("Simulação: Baixando app para dispositivo...")}
-         >
-             <DownloadIcon />
-             <span className="hidden sm:inline">Baixar App</span>
-         </button>
       </div>
     </header>
   );
