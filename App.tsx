@@ -3,7 +3,7 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { Logo } from './components/Logo';
 import { analyzeVideoForClips } from './services/geminiService';
 import { formatTime } from './utils/videoUtils';
-import { AppScreen, Clip, ClipStyle, VideoMetadata, AspectRatio } from './types';
+import { AppScreen, Clip, ClipStyle, VideoMetadata, AspectRatio, CaptionStyle } from './types';
 
 // Icons
 const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 mb-4 text-zinc-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>;
@@ -17,8 +17,6 @@ const LinkIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>;
-const AndroidIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414C17.523 16.7111 16.3986 17.8229 15.0117 17.8229C13.6248 17.8229 12.5003 16.7111 12.5003 15.3414C12.5003 13.9717 13.6248 12.8599 15.0117 12.8599C16.3986 12.8599 17.523 13.9717 17.523 15.3414ZM8.98826 15.3414C8.98826 16.7111 7.86381 17.8229 6.47688 17.8229C5.08996 17.8229 3.9655 16.7111 3.9655 15.3414C3.9655 13.9717 5.08996 12.8599 6.47688 12.8599C7.86381 12.8599 8.98826 13.9717 8.98826 15.3414ZM21.9961 12.4336V13.7915C21.9961 14.3314 21.5544 14.7679 21.0115 14.7679H20.5511C20.7397 15.4801 20.8465 16.2238 20.8465 16.9965C20.8465 19.3402 19.5695 21.3789 17.6534 22.4633V24H15.0044V22.9567C14.072 23.0905 13.104 23.1611 12.1107 23.1611C11.0263 23.1611 9.97235 23.0768 8.96025 22.9189V24H6.3112V22.4285C4.42398 21.3289 3.16895 19.3148 3.16895 17.0003C3.16895 16.2343 3.27575 15.4972 3.46437 14.799H3.00778C2.46487 14.799 2.02322 14.3624 2.02322 13.8226V12.4646C2.02322 11.9248 2.46487 11.4883 3.00778 11.4883H3.63959C4.30561 8.89279 6.13968 6.70295 8.58354 5.64299L7.15286 3.17282C6.98451 2.88318 7.08627 2.51268 7.37951 2.34638C7.67275 2.18008 8.04786 2.28062 8.21621 2.57025L9.74238 5.20571C10.7412 4.97746 11.7963 4.8524 12.8876 4.8524C13.1612 4.8524 13.4312 4.85856 13.6976 4.87082L15.3468 2.5484C15.5292 2.29124 15.8959 2.22851 16.1562 2.40871C16.4166 2.58891 16.48 2.94392 16.2976 3.20108L14.7571 5.37128C17.0315 6.3537 18.7773 8.44185 19.4678 10.9255H21.0115C21.5544 10.9255 21.9961 11.362 21.9961 11.9019V12.4336Z" /></svg>;
-const WindowsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2L11.2 3.6V11.5H22V2ZM11.2 12.5V20.4L22 22V12.5H11.2ZM2 4.8L10.2 6V11.5H2V4.8ZM2 12.5V19.2L10.2 20.4V12.5H2Z" /></svg>;
 const DragHandleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-zinc-400 cursor-grab active:cursor-grabbing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>;
 const MinusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
@@ -26,6 +24,8 @@ const ZoomInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 
 const ZoomOutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>;
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>;
+const CropIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>;
+const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 9a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l3.293 3.293a1 1 0 01-1.414 1.414L13 3.414 11.414 5l-1.414-1.414L12 1.586A1 1 0 0112.707 1zM14 10a1 1 0 100-2 1 1 0 000 2zM8.707 15.293a1 1 0 010 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6 16.586l1.293-1.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>;
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.UPLOAD);
@@ -36,7 +36,6 @@ const App: React.FC = () => {
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState("Iniciando...");
   const [currentStyle, setCurrentStyle] = useState<ClipStyle>(ClipStyle.DYNAMIC);
-  const [showAppDownload, setShowAppDownload] = useState(false);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
   
   // YouTube State
@@ -50,7 +49,10 @@ const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [exportRatio, setExportRatio] = useState<AspectRatio>('9:16');
   const [showCaptions, setShowCaptions] = useState(true);
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(CaptionStyle.MODERN);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [cropPosition, setCropPosition] = useState({ x: 50, y: 50 });
+  const [isDetectingSubject, setIsDetectingSubject] = useState(false);
 
   // Drag and Drop State
   const [draggedClipIndex, setDraggedClipIndex] = useState<number | null>(null);
@@ -168,24 +170,26 @@ const App: React.FC = () => {
 
   const handleSmartCut = async (clip: Clip) => {
     setRefiningClipId(clip.id);
-    
-    // Simulate smart cut logic
     await new Promise(r => setTimeout(r, 1500));
-    
-    // Shift slightly to "Find Hook"
     const duration = clip.endTime - clip.startTime;
     const newStart = Math.max(0, clip.startTime - 2.5); 
     const newEnd = newStart + duration;
-    
     const refinedClip = {
         ...clip,
         startTime: newStart,
         endTime: newEnd,
         title: clip.title + " (Refinado)"
     };
-    
     setClips(clips.map(c => c.id === clip.id ? refinedClip : c));
     setRefiningClipId(null);
+  };
+
+  const handleAutoReframe = async () => {
+    setIsDetectingSubject(true);
+    await new Promise(r => setTimeout(r, 2000)); // Simulate detection
+    setExportRatio('9:16');
+    setCropPosition({ x: 50, y: 50 }); // Center subject
+    setIsDetectingSubject(false);
   };
 
   const openPreview = (clip: Clip) => {
@@ -262,40 +266,8 @@ const App: React.FC = () => {
         <Logo className="w-10 h-10" />
         <span className="text-xl font-bold tracking-tight text-white hidden md:block">ClipSmart AI</span>
       </div>
-      <button 
-        onClick={() => setShowAppDownload(true)}
-        className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-sm text-zinc-300 rounded-full transition-all flex items-center gap-2"
-      >
-        <DownloadIcon /> Baixar App
-      </button>
     </header>
   );
-
-  const AppDownloadModal = () => {
-    if (!showAppDownload) return null;
-    return (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-zinc-900 rounded-3xl p-8 max-w-md w-full border border-zinc-800 shadow-2xl relative">
-                <button onClick={() => setShowAppDownload(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
-                    <XIcon />
-                </button>
-                <div className="text-center mb-8">
-                    <Logo className="w-16 h-16 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-white mb-2">Leve o ClipSmart com você</h3>
-                    <p className="text-zinc-400">Instale a versão nativa para processamento offline e mais rápido.</p>
-                </div>
-                <div className="space-y-3">
-                    <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all" onClick={() => alert("Simulando download Windows .exe")}>
-                        <WindowsIcon /> Download para Windows
-                    </button>
-                    <button className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all" onClick={() => alert("Simulando download Android .apk")}>
-                        <AndroidIcon /> Download para Android
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-  };
 
   // --- Screens ---
 
@@ -402,7 +374,8 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 animate-fade-in">
              <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" onClick={closePreview}></div>
              
-             <div className="relative w-full max-w-6xl h-[90vh] flex flex-col md:flex-row bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 animate-scale-up">
+             {/* Use dvh for mobile browser bar compatibility */}
+             <div className="relative w-full max-w-6xl h-[90vh] md:h-[90dvh] flex flex-col md:flex-row bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 animate-scale-up">
                 
                 {/* Close Button */}
                 <button 
@@ -433,6 +406,7 @@ const App: React.FC = () => {
                         aspectRatio="9:16"
                         captionText={previewClip.transcript}
                         showCaptions={true}
+                        captionStyle={captionStyle}
                         className="h-full w-auto aspect-[9/16] max-h-full shadow-2xl z-10"
                         onEnded={() => setIsPlaying(false)}
                         onTimeUpdate={(t) => setPreviewCurrentTime(t)}
@@ -644,21 +618,32 @@ const App: React.FC = () => {
     const widthPct = endPct - startPct;
 
     return (
-      <div className="h-[90vh] flex flex-col md:flex-row bg-black">
-        {/* CSS for Range Inputs */}
+      <div className="h-[90vh] md:h-[90dvh] flex flex-col md:flex-row bg-black">
+        {/* CSS for Range Inputs - Cross Browser Compatible */}
         <style>{`
+          /* Standard and WebKit */
+          input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+          }
+          
+          /* WebKit Slider Thumb */
           input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
             pointer-events: auto;
             width: 24px;
             height: 24px;
-            -webkit-appearance: none;
             background: white;
             border-radius: 50%;
             border: 2px solid #6366f1; /* indigo-500 */
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin-top: -10px; /* Center thumb on track if track is thinner */
+            margin-top: -10px; /* Aligns middle of thumb with middle of track */
+            position: relative;
+            z-index: 50;
           }
+          
+          /* Firefox Slider Thumb */
           input[type=range]::-moz-range-thumb {
             pointer-events: auto;
             width: 24px;
@@ -668,7 +653,24 @@ const App: React.FC = () => {
             border: 2px solid #6366f1;
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transform: translateY(0px); /* Firefox doesn't need margin hack usually if track is standard */
+            z-index: 50;
           }
+
+          /* Track Cleanup to remove default borders */
+          input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+          }
+          input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+          }
+
            /* Custom scrollbar for horizontal scrolling timeline */
            .custom-scrollbar::-webkit-scrollbar {
             height: 6px;
@@ -695,7 +697,7 @@ const App: React.FC = () => {
             </div>
             
             {/* Video Player Container */}
-            <div className="relative flex-1 w-full max-h-[55vh] flex items-center justify-center">
+            <div className="relative flex-1 w-full max-h-[55vh] flex items-center justify-center group">
                  <VideoPlayer
                     videoUrl={videoMeta.url}
                     startTime={editedClip.startTime}
@@ -704,11 +706,23 @@ const App: React.FC = () => {
                     aspectRatio={exportRatio}
                     captionText={editedClip.transcript}
                     showCaptions={showCaptions}
+                    captionStyle={captionStyle}
+                    cropPosition={cropPosition}
                     className="h-full shadow-2xl"
                     onEnded={() => setIsPlaying(false)}
                 />
-                <div className="absolute bottom-10 flex gap-4 z-20">
-                    <button onClick={() => setIsPlaying(!isPlaying)} className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform shadow-xl">
+
+                {/* Drag hint overlay */}
+                {exportRatio !== '16:9' && !isPlaying && (
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="bg-black/60 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                            Arraste para ajustar o enquadramento
+                         </div>
+                    </div>
+                )}
+
+                <div className="absolute bottom-10 flex gap-4 z-20 pointer-events-none">
+                    <button onClick={() => setIsPlaying(!isPlaying)} className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform shadow-xl pointer-events-auto">
                         {isPlaying ? <PauseIcon /> : <PlayIcon />}
                     </button>
                 </div>
@@ -831,6 +845,29 @@ const App: React.FC = () => {
                 <h2 className="text-2xl font-bold text-white mb-1">Ajuste Final</h2>
                 <p className="text-zinc-500 text-sm">Prepare seu clipe para postar.</p>
             </div>
+
+            {/* Smart Crop Section */}
+            <div className="space-y-4">
+                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                     <CropIcon /> Enquadramento Inteligente
+                 </label>
+                 <button 
+                    onClick={handleAutoReframe}
+                    disabled={isDetectingSubject}
+                    className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-xl border border-zinc-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                 >
+                    {isDetectingSubject ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            Detectando sujeito...
+                        </>
+                    ) : (
+                        <>
+                            <SparklesIcon /> Auto Reframe (IA)
+                        </>
+                    )}
+                 </button>
+            </div>
             
             <div className="space-y-4">
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Formato</label>
@@ -848,6 +885,31 @@ const App: React.FC = () => {
                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showCaptions ? 'translate-x-4' : ''}`} />
                     </button>
                  </div>
+                 
+                 {/* Caption Style Selector */}
+                 {showCaptions && (
+                     <div className="grid grid-cols-2 gap-2 mt-2">
+                         {[
+                             { id: CaptionStyle.MODERN, label: 'Moderno' },
+                             { id: CaptionStyle.CLASSIC, label: 'Clássico' },
+                             { id: CaptionStyle.HIGHLIGHT, label: 'Destaque' },
+                             { id: CaptionStyle.BOX, label: 'Box' },
+                         ].map((style) => (
+                             <button
+                                key={style.id}
+                                onClick={() => setCaptionStyle(style.id)}
+                                className={`py-2 text-xs font-bold rounded-lg border transition-all ${
+                                    captionStyle === style.id 
+                                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' 
+                                    : 'bg-zinc-800 border-transparent text-zinc-400 hover:bg-zinc-700'
+                                }`}
+                             >
+                                 {style.label}
+                             </button>
+                         ))}
+                     </div>
+                 )}
+
                  <textarea 
                     className="w-full bg-zinc-800 border-transparent focus:border-indigo-500 rounded-xl p-4 text-sm text-white resize-none h-32"
                     value={editedClip.transcript}
@@ -890,7 +952,6 @@ const App: React.FC = () => {
       {screen === AppScreen.SELECTION && renderSelection()}
       {screen === AppScreen.EDITOR && renderEditor()}
       {screen === AppScreen.EXPORT && renderExport()}
-      <AppDownloadModal />
     </div>
   );
 };

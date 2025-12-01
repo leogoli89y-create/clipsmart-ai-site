@@ -4,6 +4,17 @@ import { Clip, ClipStyle } from "../types";
 // Initialize the API client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
+// Helper to ensure DOMException compatibility across environments (Browser vs Node)
+// This avoids "ReferenceError: DOMException is not defined" if the environment doesn't support it globally.
+function createDOMException(message: string, name: string): Error {
+  if (typeof DOMException !== 'undefined') {
+    return new DOMException(message, name);
+  }
+  const error = new Error(message);
+  error.name = name;
+  return error;
+}
+
 const fileToGenerativePart = async (file: File): Promise<{ inlineData: { data: string; mimeType: string } }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -18,12 +29,12 @@ const fileToGenerativePart = async (file: File): Promise<{ inlineData: { data: s
           },
         });
       } else {
-        reject(new DOMException("Falha ao ler dados do arquivo.", "NotReadableError"));
+        reject(createDOMException("Falha ao ler dados do arquivo.", "NotReadableError"));
       }
     };
 
     reader.onerror = () => {
-      reject(reader.error || new DOMException("Erro desconhecido na leitura do arquivo.", "UnknownError"));
+      reject(reader.error || createDOMException("Erro desconhecido na leitura do arquivo.", "UnknownError"));
     };
 
     reader.readAsDataURL(file);
@@ -169,13 +180,19 @@ export const analyzeVideoForClips = async (
       transcript: c.transcript
     }));
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing video:", error);
-    // Use DOMException for better error semantics in web environments
-    if (error instanceof DOMException) {
+    
+    // Check if error is a DOMException (either native or our fallback)
+    // We check name property to be generic across implementations
+    const isDOMException = (typeof DOMException !== 'undefined' && error instanceof DOMException) || 
+                           (error instanceof Error && (error.name === 'NotReadableError' || error.name === 'OperationError'));
+
+    if (isDOMException) {
       throw error;
     }
-    throw new DOMException(
+    
+    throw createDOMException(
       "Falha ao analisar o vídeo. Tente um arquivo menor ou verifique sua conexão.",
       "OperationError"
     );

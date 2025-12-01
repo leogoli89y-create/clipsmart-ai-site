@@ -27,6 +27,13 @@ export enum ClipStyle {
   LONG = 'Longos (50s)'
 }
 
+export enum CaptionStyle {
+  MODERN = 'modern',     // Semi-transparent blur box
+  CLASSIC = 'classic',   // White text with shadow
+  HIGHLIGHT = 'highlight', // Yellow/Bold text (TikTok style)
+  BOX = 'box'           // Solid color box
+}
+
 export type AspectRatio = '9:16' | '1:1' | '16:9';
 
 export interface VideoMetadata {
