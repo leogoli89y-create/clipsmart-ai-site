@@ -7,16 +7,25 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 const fileToGenerativePart = async (file: File): Promise<{ inlineData: { data: string; mimeType: string } }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64Data = (reader.result as string).split(',')[1];
-      resolve({
-        inlineData: {
-          data: base64Data,
-          mimeType: file.type,
-        },
-      });
+    
+    reader.onload = () => {
+      if (reader.result) {
+        const base64Data = (reader.result as string).split(',')[1];
+        resolve({
+          inlineData: {
+            data: base64Data,
+            mimeType: file.type,
+          },
+        });
+      } else {
+        reject(new DOMException("Falha ao ler dados do arquivo.", "NotReadableError"));
+      }
     };
-    reader.onerror = reject;
+
+    reader.onerror = () => {
+      reject(reader.error || new DOMException("Erro desconhecido na leitura do arquivo.", "UnknownError"));
+    };
+
     reader.readAsDataURL(file);
   });
 };
@@ -162,7 +171,14 @@ export const analyzeVideoForClips = async (
 
   } catch (error) {
     console.error("Error analyzing video:", error);
-    throw new Error("Falha ao analisar o vídeo. Tente um arquivo menor ou verifique sua conexão.");
+    // Use DOMException for better error semantics in web environments
+    if (error instanceof DOMException) {
+      throw error;
+    }
+    throw new DOMException(
+      "Falha ao analisar o vídeo. Tente um arquivo menor ou verifique sua conexão.",
+      "OperationError"
+    );
   }
 };
 
